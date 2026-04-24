@@ -32,9 +32,9 @@ const {useState,useMemo,useEffect} = React;
 
 const STD_META = {
   iso27001:{abbr:'ISMS',color:'#2563EB'},iso27701:{abbr:'PIMS',color:'#7C3AED'},
-  iso37001:{abbr:'ABMS',color:'#DC2626'},iso20000:{abbr:'ITSMS',color:'#059669'},
-  iso50001:{abbr:'EnMS',color:'#D97706'},iso45001:{abbr:'OHSMS',color:'#0891B2'},
-  iso22301:{abbr:'BCMS',color:'#B91C1C'},
+  iso20000:{abbr:'ITSMS',color:'#059669'},iso22301:{abbr:'BCMS',color:'#B91C1C'},
+  iso45001:{abbr:'OHSMS',color:'#0891B2'},iso37001:{abbr:'ABMS',color:'#DC2626'},
+  iso50001:{abbr:'EnMS',color:'#D97706'},
 };
 
 const SEVERITY = {
@@ -53,62 +53,7 @@ const PHASES = ['Internal Audit','Stage 1 (CB)','Stage 2 (CB)','Surveillance','R
 const OWNERS = ['Internal Audit','IT Security','Legal','HR','Facility Mgmt','Top Management','Konsultan 1','Konsultan 2'];
 const METHODS = ['5-Why','Fishbone (Ishikawa)','Fault Tree','RCA Workshop'];
 
-const SEED = [
-  {id:'NCR-001',standard:'iso27001',clause:'6.1.2',phase:'Internal Audit',severity:'major',auditor:'Internal Audit',date:'2026-06-15',
-   finding:'Information security risk assessment does not cover all assets within ISMS scope. Network infrastructure at Batam PoP excluded without documented justification.',
-   containment:'Scope expanded to include Batam PoP assets. Interim review conducted.',
-   rootCause:'Risk assessment procedure did not include explicit asset inventory reconciliation step. Asset list was not updated after 2025 network expansion.',
-   method:'5-Why',
-   correctiveAction:'Update risk assessment procedure to require mandatory reconciliation with asset inventory before each risk assessment cycle. Conduct complete risk assessment including Batam PoP.',
-   caOwner:'IT Security',caDue:'2026-07-10',
-   verification:'',verifier:'',verDate:'',
-   status:'in-progress',notes:'Konsultan 1 assisting with updated procedure.'},
-  {id:'NCR-002',standard:'iso27701',clause:'7.2.1',phase:'Internal Audit',severity:'minor',auditor:'Internal Audit',date:'2026-06-15',
-   finding:'PII processing records (Art. 30 equivalent under UU PDP) do not include cross-border transfer activities to Singapore and Australia subsidiaries.',
-   containment:'Cross-border transfer register created as interim measure.',
-   rootCause:'Privacy procedure was based on legacy template that predates UU PDP enforcement (Oct 2024). Cross-border transfer provisions not addressed.',
-   method:'5-Why',
-   correctiveAction:'Revise PII processing records procedure to include cross-border transfer fields. Identify all cross-border PII flows and document basis for transfer (contractual clauses, consent, adequacy).',
-   caOwner:'Legal',caDue:'2026-07-15',
-   verification:'',verifier:'',verDate:'',
-   status:'in-progress',notes:'Legal team coordinating with Telin SG and AU for data mapping.'},
-  {id:'NCR-003',standard:'iso37001',clause:'8.7',phase:'Internal Audit',severity:'major',auditor:'Internal Audit',date:'2026-06-20',
-   finding:'Bribery risk assessment does not cover Telin USA operations. FCPA (Foreign Corrupt Practices Act) exposure not evaluated despite Telin USA operating in high-FCPA-scrutiny environment.',
-   containment:'USA operations flagged as high-priority scope extension. Legal team notified.',
-   rootCause:'Original ABMS scope document excluded international subsidiaries. Scope was set at Telin HQ only without risk-based justification for exclusion of high-risk jurisdictions.',
-   method:'5-Why',
-   correctiveAction:'Extend ABMS scope to include Telin USA and Telin HK (ICAC jurisdiction). Conduct bribery risk assessment for both entities. Update Scope Document and notify CB of scope change.',
-   caOwner:'Legal',caDue:'2026-07-05',
-   verification:'',verifier:'',verDate:'',
-   status:'open',notes:'CRITICAL — CB must be notified. Legal counsel in USA to be consulted.'},
-  {id:'NCR-004',standard:'iso20000',clause:'8.3.3',phase:'Internal Audit',severity:'minor',auditor:'Internal Audit',date:'2026-06-22',
-   finding:'Configuration management records for 3 network devices at Singapore PoP are outdated. Last configuration baseline recorded Q3 2025.',
-   containment:'Configuration audit of Singapore PoP initiated.',
-   rootCause:'Configuration management procedure requires quarterly update but no automated reminder or compliance check existed. Manual process relied on PoP team diligence.',
-   method:'5-Why',
-   correctiveAction:'Implement automated configuration management audit schedule using existing ITSM tool. Add configuration compliance check to quarterly service review agenda.',
-   caOwner:'IT Security',caDue:'2026-07-20',
-   verification:'',verifier:'',verDate:'',
-   status:'in-progress',notes:''},
-  {id:'NCR-005',standard:'iso50001',clause:'6.3',phase:'Internal Audit',severity:'major',auditor:'Internal Audit',date:'2026-06-25',
-   finding:'Energy baseline not established. EnPIs (Energy Performance Indicators) not defined. No documented energy review per clause 6.3–6.4 requirements. This is a new certification — foundational elements missing.',
-   containment:'Energy data collection from facilities management initiated.',
-   rootCause:'EnMS is a new certification. Programme timeline underestimated complexity of energy data collection from multiple PoPs and data centers. No dedicated energy manager appointed.',
-   method:'Fishbone (Ishikawa)',
-   correctiveAction:'Appoint Energy Management Representative (EMR). Conduct complete energy review covering all in-scope facilities. Establish energy baseline from 12-month historical data. Define EnPIs for data centers and office facilities. Complete by Stage 1 audit.',
-   caOwner:'Facility Mgmt',caDue:'2026-07-01',
-   verification:'',verifier:'',verDate:'',
-   status:'open',notes:'CRITICAL for new cert. CB Stage 1 will check this first.'},
-  {id:'NCR-006',standard:'iso45001',clause:'6.1.2',phase:'Internal Audit',severity:'minor',auditor:'Internal Audit',date:'2026-06-22',
-   finding:'HIRA (Hazard Identification and Risk Assessment) for submarine cable maintenance activities does not include diving operations and working-at-height on cable ships.',
-   containment:'Interim JSA (Job Safety Analysis) prepared for upcoming cable maintenance.',
-   rootCause:'HIRA was scoped to office and land-based activities. Marine/offshore operations not included in initial scope despite being significant OHS exposure.',
-   method:'5-Why',
-   correctiveAction:'Expand HIRA to include marine and offshore operations. Engage specialist OHS consultant for maritime risk assessment. Update emergency response plan to include maritime scenarios.',
-   caOwner:'HR',caDue:'2026-07-15',
-   verification:'',verifier:'',verDate:'',
-   status:'in-progress',notes:''},
-];
+const SEED = ['iso27001', 'iso27701', 'iso20000', 'iso45001', 'iso37001', 'iso50001'];
 
 // IDs generated by GRCStore
 

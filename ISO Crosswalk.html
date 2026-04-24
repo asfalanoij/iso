@@ -481,7 +481,28 @@ function DependencyGraph({ highlightStd }) {
         });
       });
     });
-    const data = Object.keys(linksMap).map(key => { const [from, to] = key.split('|'); return [from, to, linksMap[key]]; });
+    
+    // Explicit Node Order required by the user
+    // The sequence is: Clauses 4-10 sequentially, followed by the standards order
+    const orderedNodes = [
+      '§4 Context', '§5 Leadership', '§6 Planning', '§7 Support', '§8 Operation', '§9 Performance', '§10 Improvement',
+      ...STDS.map(sid => STD_META[sid].abbr)
+    ];
+
+    // Highcharts determines node order based on first encounter in the data set.
+    // By creating a ring of invisible negligible links perfectly following our required order, we force the perimeter order.
+    const data = [];
+    for (let i = 0; i < orderedNodes.length; i++) {
+        const nextId = orderedNodes[i === orderedNodes.length - 1 ? 0 : i + 1];
+        data.push([orderedNodes[i], nextId, 1e-9]); // negligible weight prevents visual distraction but sets the frame
+    }
+    
+    // Append the real visual data mappings
+    Object.keys(linksMap).forEach(key => { 
+        const [from, to] = key.split('|'); 
+        data.push([from, to, linksMap[key]]); 
+    });
+
     let chart;
     try {
       chart = Highcharts.chart(chartRef.current, {
@@ -489,8 +510,10 @@ function DependencyGraph({ highlightStd }) {
         title: { text: null }, credits: { enabled: false },
         series: [{ keys: ['from', 'to', 'weight'], data, type: 'dependencywheel', name: 'Dependency Flow', size: '95%',
           dataLabels: { color: 'var(--gray-900)', textPath: { enabled: true, attributes: { dy: 5 } }, distance: 10, style: { fontWeight: '700', fontSize: '12px', textOutline: 'none' } },
-          nodes: [...STDS.map(sid => ({ id: STD_META[sid].abbr, color: STD_META[sid].color })),
-            ...['§4 Context','§5 Leadership','§6 Planning','§7 Support','§8 Operation','§9 Performance','§10 Improvement'].map(id => ({ id, color: '#6B7280' }))]
+          nodes: orderedNodes.map(id => ({ 
+              id, 
+              color: id.startsWith('§') ? '#6B7280' : STD_META[STDS.find(s => STD_META[s].abbr === id)].color 
+          }))
         }]
       });
     } catch(e) { chartRef.current.innerHTML = `<div style="color:red;font-weight:bold;padding:20px;">Highcharts Error: ${e.message}</div>`; }

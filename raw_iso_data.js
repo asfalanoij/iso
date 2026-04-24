@@ -401,172 +401,6 @@ const RAW_ISO_DATA = {
     },
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // ISO 37001:2025 — Anti-Bribery Management System (with 2016 delta)
-    // ═══════════════════════════════════════════════════════════════════════════
-    {
-      "id": "iso37001",
-      "code": "ISO 37001:2025",
-      "name": "Anti-bribery management systems",
-      "version": "2025",
-      "previousVersion": "2016",
-      "clauses": [
-        {"id": "4", "title": "Context of the organization", "subclauses": [
-          {"id": "4.1", "title": "Understanding the organization and its context",
-            "delta": {"type": "modified", "note": "Added climate change consideration per Harmonized Structure"}},
-          {"id": "4.2", "title": "Understanding the needs and expectations of interested parties"},
-          {"id": "4.3", "title": "Determining the scope of the anti-bribery management system"},
-          {"id": "4.4", "title": "Anti-bribery management system"},
-          {"id": "4.5", "title": "Bribery risk assessment",
-            "delta": {"type": "moved", "from2016": "8.2 (partial)", "note": "Elevated from operational clause to strategic planning; now its own dedicated clause requiring documented methodology"}}
-        ]},
-        {"id": "5", "title": "Leadership", "subclauses": [
-          {"id": "5.1", "title": "Leadership and commitment", "subclauses": [
-            {"id": "5.1.1", "title": "General"},
-            {"id": "5.1.2", "title": "Governing body",
-              "delta": {"type": "enhanced", "note": "Enhanced governing body requirements; must demonstrate active oversight of ABMS"}},
-            {"id": "5.1.3", "title": "Anti-bribery culture",
-              "delta": {"type": "new", "note": "NEW clause requiring formalized ethical culture programme with measurable indicators"}}
-          ]},
-          {"id": "5.2", "title": "Anti-bribery policy"},
-          {"id": "5.3", "title": "Organizational roles, responsibilities and authorities", "subclauses": [
-            {"id": "5.3.1", "title": "General"},
-            {"id": "5.3.2", "title": "Top management"},
-            {"id": "5.3.3", "title": "Anti-bribery function",
-              "delta": {"type": "renamed", "from2016": "Anti-bribery compliance function", "note": "Renamed; function must have direct access to governing body; independence requirements strengthened"}}
-          ]}
-        ]},
-        {"id": "6", "title": "Planning", "subclauses": [
-          {"id": "6.1", "title": "Actions to address risks and opportunities"},
-          {"id": "6.2", "title": "Anti-bribery objectives and planning to achieve them"},
-          {"id": "6.3", "title": "Planning of changes",
-            "delta": {"type": "new", "note": "NEW clause per Harmonized Structure alignment; systematic change management for ABMS"}}
-        ]},
-        {"id": "7", "title": "Support", "subclauses": [
-          {"id": "7.1", "title": "Resources"},
-          {"id": "7.2", "title": "Competence"},
-          {"id": "7.3", "title": "Awareness and training"},
-          {"id": "7.4", "title": "Communication"},
-          {"id": "7.5", "title": "Documented information"}
-        ]},
-        {"id": "8", "title": "Operation", "subclauses": [
-          {"id": "8.1", "title": "Operational planning and control"},
-          {"id": "8.2", "title": "Due diligence"},
-          {"id": "8.3", "title": "Financial controls"},
-          {"id": "8.4", "title": "Non-financial controls",
-            "delta": {"type": "new", "note": "NEW clause; addresses non-financial anti-bribery controls beyond monetary transactions"}},
-          {"id": "8.5", "title": "Implementation of anti-bribery controls by controlled organizations and business associates"},
-          {"id": "8.6", "title": "Anti-bribery commitments"},
-          {"id": "8.7", "title": "Conflicts of interest",
-            "delta": {"type": "enhanced", "note": "Enhanced from 2016; expanded scope covering personal, financial, and organizational conflicts; requires documented register"}},
-          {"id": "8.8", "title": "Gifts, hospitality, donations and similar benefits"},
-          {"id": "8.9", "title": "Managing inadequacy of anti-bribery controls"},
-          {"id": "8.10", "title": "Raising concerns"},
-          {"id": "8.11", "title": "Investigating and dealing with bribery"}
-        ]},
-        {"id": "9", "title": "Performance evaluation", "subclauses": [
-          {"id": "9.1", "title": "Monitoring, measurement, analysis and evaluation"},
-          {"id": "9.2", "title": "Internal audit"},
-          {"id": "9.3", "title": "Management review"},
-          {"id": "9.4", "title": "Review by anti-bribery function",
-            "delta": {"type": "new", "note": "NEW clause; anti-bribery function must conduct formal periodic review with documented output to governing body"}},
-          {"id": "9.5", "title": "Review by governing body",
-            "delta": {"type": "new", "note": "NEW clause; governing body must formally review ABMS effectiveness at planned intervals"}}
-        ]},
-        {"id": "10", "title": "Improvement", "subclauses": [
-          {"id": "10.1", "title": "Continual improvement"},
-          {"id": "10.2", "title": "Nonconformity and corrective action"}
-        ]}
-      ],
-      "annexes": [
-        {
-          "id": "Annex A",
-          "title": "Guidance on bribery risk assessment (informative)",
-          "note": "Restructured in 2025 to align with Clause 4.5"
-        }
-      ]
-    },
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // ISO 22301:2019 — Business Continuity Management System
-    // ═══════════════════════════════════════════════════════════════════════════
-    {
-      "id": "iso22301",
-      "code": "ISO 22301:2019",
-      "name": "Business continuity management systems",
-      "clauses": [
-        {"id": "4", "title": "Context of the organization", "subclauses": [
-          {"id": "4.1", "title": "Understanding the organization and its context"},
-          {"id": "4.2", "title": "Understanding the needs and expectations of interested parties", "subclauses": [
-            {"id": "4.2.1", "title": "General"},
-            {"id": "4.2.2", "title": "Legal and regulatory requirements"}
-          ]},
-          {"id": "4.3", "title": "Determining the scope of the BCMS", "subclauses": [
-            {"id": "4.3.1", "title": "General"},
-            {"id": "4.3.2", "title": "Scope of the BCMS"}
-          ]},
-          {"id": "4.4", "title": "Business continuity management system"}
-        ]},
-        {"id": "5", "title": "Leadership", "subclauses": [
-          {"id": "5.1", "title": "Leadership and commitment"},
-          {"id": "5.2", "title": "Policy", "subclauses": [
-            {"id": "5.2.1", "title": "Establishing the business continuity policy"},
-            {"id": "5.2.2", "title": "Communicating the business continuity policy"}
-          ]},
-          {"id": "5.3", "title": "Organizational roles, responsibilities and authorities"}
-        ]},
-        {"id": "6", "title": "Planning", "subclauses": [
-          {"id": "6.1", "title": "Actions to address risks and opportunities"},
-          {"id": "6.2", "title": "Business continuity objectives and plans to achieve them"},
-          {"id": "6.3", "title": "Planning changes to the BCMS"}
-        ]},
-        {"id": "7", "title": "Support", "subclauses": [
-          {"id": "7.1", "title": "Resources"},
-          {"id": "7.2", "title": "Competence"},
-          {"id": "7.3", "title": "Awareness"},
-          {"id": "7.4", "title": "Communication"},
-          {"id": "7.5", "title": "Documented information", "subclauses": [
-            {"id": "7.5.1", "title": "General"},
-            {"id": "7.5.2", "title": "Creating and updating"},
-            {"id": "7.5.3", "title": "Control of documented information"}
-          ]}
-        ]},
-        {"id": "8", "title": "Operation", "subclauses": [
-          {"id": "8.1", "title": "Operational planning and control"},
-          {"id": "8.2", "title": "Business impact analysis and risk assessment", "subclauses": [
-            {"id": "8.2.1", "title": "General"},
-            {"id": "8.2.2", "title": "Business impact analysis"},
-            {"id": "8.2.3", "title": "Risk assessment"}
-          ]},
-          {"id": "8.3", "title": "Business continuity strategies and solutions", "subclauses": [
-            {"id": "8.3.1", "title": "General"},
-            {"id": "8.3.2", "title": "Identification of strategies and solutions"},
-            {"id": "8.3.3", "title": "Resource requirements"},
-            {"id": "8.3.4", "title": "Selection of strategies and solutions"},
-            {"id": "8.3.5", "title": "Implementation of selected solutions"}
-          ]},
-          {"id": "8.4", "title": "Business continuity plans and procedures", "subclauses": [
-            {"id": "8.4.1", "title": "General"},
-            {"id": "8.4.2", "title": "Structure of response"},
-            {"id": "8.4.3", "title": "Warning and communication"},
-            {"id": "8.4.4", "title": "Business continuity plans"},
-            {"id": "8.4.5", "title": "Recovery"}
-          ]},
-          {"id": "8.5", "title": "Exercise programme"},
-          {"id": "8.6", "title": "Evaluation of business continuity documentation and capabilities"}
-        ]},
-        {"id": "9", "title": "Performance evaluation", "subclauses": [
-          {"id": "9.1", "title": "Monitoring, measurement, analysis and evaluation"},
-          {"id": "9.2", "title": "Internal audit"},
-          {"id": "9.3", "title": "Management review"}
-        ]},
-        {"id": "10", "title": "Improvement", "subclauses": [
-          {"id": "10.1", "title": "Nonconformity and corrective action"},
-          {"id": "10.2", "title": "Continual improvement"}
-        ]}
-      ]
-    },
-
-    // ═══════════════════════════════════════════════════════════════════════════
     // ISO/IEC 20000-1:2018 — IT Service Management System
     // ═══════════════════════════════════════════════════════════════════════════
     {
@@ -660,31 +494,37 @@ const RAW_ISO_DATA = {
     },
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // ISO 50001:2018 — Energy Management System
+    // ISO 22301:2019 — Business Continuity Management System
     // ═══════════════════════════════════════════════════════════════════════════
     {
-      "id": "iso50001",
-      "code": "ISO 50001:2018",
-      "name": "Energy Management System",
+      "id": "iso22301",
+      "code": "ISO 22301:2019",
+      "name": "Business continuity management systems",
       "clauses": [
         {"id": "4", "title": "Context of the organization", "subclauses": [
           {"id": "4.1", "title": "Understanding the organization and its context"},
-          {"id": "4.2", "title": "Understanding the needs and expectations of interested parties"},
-          {"id": "4.3", "title": "Determining the scope of the energy management system"},
-          {"id": "4.4", "title": "Energy management system"}
+          {"id": "4.2", "title": "Understanding the needs and expectations of interested parties", "subclauses": [
+            {"id": "4.2.1", "title": "General"},
+            {"id": "4.2.2", "title": "Legal and regulatory requirements"}
+          ]},
+          {"id": "4.3", "title": "Determining the scope of the BCMS", "subclauses": [
+            {"id": "4.3.1", "title": "General"},
+            {"id": "4.3.2", "title": "Scope of the BCMS"}
+          ]},
+          {"id": "4.4", "title": "Business continuity management system"}
         ]},
         {"id": "5", "title": "Leadership", "subclauses": [
           {"id": "5.1", "title": "Leadership and commitment"},
-          {"id": "5.2", "title": "Energy policy"},
+          {"id": "5.2", "title": "Policy", "subclauses": [
+            {"id": "5.2.1", "title": "Establishing the business continuity policy"},
+            {"id": "5.2.2", "title": "Communicating the business continuity policy"}
+          ]},
           {"id": "5.3", "title": "Organizational roles, responsibilities and authorities"}
         ]},
         {"id": "6", "title": "Planning", "subclauses": [
           {"id": "6.1", "title": "Actions to address risks and opportunities"},
-          {"id": "6.2", "title": "Objectives, energy targets and planning to achieve them"},
-          {"id": "6.3", "title": "Energy review"},
-          {"id": "6.4", "title": "Energy performance indicators (EnPIs)"},
-          {"id": "6.5", "title": "Energy baseline (EnB)"},
-          {"id": "6.6", "title": "Planning for collection of energy data"}
+          {"id": "6.2", "title": "Business continuity objectives and plans to achieve them"},
+          {"id": "6.3", "title": "Planning changes to the BCMS"}
         ]},
         {"id": "7", "title": "Support", "subclauses": [
           {"id": "7.1", "title": "Resources"},
@@ -699,18 +539,31 @@ const RAW_ISO_DATA = {
         ]},
         {"id": "8", "title": "Operation", "subclauses": [
           {"id": "8.1", "title": "Operational planning and control"},
-          {"id": "8.2", "title": "Design"},
-          {"id": "8.3", "title": "Procurement"}
+          {"id": "8.2", "title": "Business impact analysis and risk assessment", "subclauses": [
+            {"id": "8.2.1", "title": "General"},
+            {"id": "8.2.2", "title": "Business impact analysis"},
+            {"id": "8.2.3", "title": "Risk assessment"}
+          ]},
+          {"id": "8.3", "title": "Business continuity strategies and solutions", "subclauses": [
+            {"id": "8.3.1", "title": "General"},
+            {"id": "8.3.2", "title": "Identification of strategies and solutions"},
+            {"id": "8.3.3", "title": "Resource requirements"},
+            {"id": "8.3.4", "title": "Selection of strategies and solutions"},
+            {"id": "8.3.5", "title": "Implementation of selected solutions"}
+          ]},
+          {"id": "8.4", "title": "Business continuity plans and procedures", "subclauses": [
+            {"id": "8.4.1", "title": "General"},
+            {"id": "8.4.2", "title": "Structure of response"},
+            {"id": "8.4.3", "title": "Warning and communication"},
+            {"id": "8.4.4", "title": "Business continuity plans"},
+            {"id": "8.4.5", "title": "Recovery"}
+          ]},
+          {"id": "8.5", "title": "Exercise programme"},
+          {"id": "8.6", "title": "Evaluation of business continuity documentation and capabilities"}
         ]},
         {"id": "9", "title": "Performance evaluation", "subclauses": [
-          {"id": "9.1", "title": "Monitoring, measurement, analysis and evaluation of energy performance and the EnMS", "subclauses": [
-            {"id": "9.1.1", "title": "General"},
-            {"id": "9.1.2", "title": "Evaluation of compliance with legal and other requirements"}
-          ]},
-          {"id": "9.2", "title": "Internal audit", "subclauses": [
-            {"id": "9.2.1", "title": "General"},
-            {"id": "9.2.2", "title": "Internal audit programme"}
-          ]},
+          {"id": "9.1", "title": "Monitoring, measurement, analysis and evaluation"},
+          {"id": "9.2", "title": "Internal audit"},
           {"id": "9.3", "title": "Management review"}
         ]},
         {"id": "10", "title": "Improvement", "subclauses": [
@@ -799,6 +652,153 @@ const RAW_ISO_DATA = {
           {"id": "10.1", "title": "General"},
           {"id": "10.2", "title": "Incident, nonconformity and corrective action"},
           {"id": "10.3", "title": "Continual improvement"}
+        ]}
+      ]
+    },
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // ISO 37001:2025 — Anti-Bribery Management System (with 2016 delta)
+    // ═══════════════════════════════════════════════════════════════════════════
+    {
+      "id": "iso37001",
+      "code": "ISO 37001:2025",
+      "name": "Anti-bribery management systems",
+      "version": "2025",
+      "previousVersion": "2016",
+      "clauses": [
+        {"id": "4", "title": "Context of the organization", "subclauses": [
+          {"id": "4.1", "title": "Understanding the organization and its context",
+            "delta": {"type": "modified", "note": "Added climate change consideration per Harmonized Structure"}},
+          {"id": "4.2", "title": "Understanding the needs and expectations of interested parties"},
+          {"id": "4.3", "title": "Determining the scope of the anti-bribery management system"},
+          {"id": "4.4", "title": "Anti-bribery management system"},
+          {"id": "4.5", "title": "Bribery risk assessment",
+            "delta": {"type": "moved", "from2016": "8.2 (partial)", "note": "Elevated from operational clause to strategic planning; now its own dedicated clause requiring documented methodology"}}
+        ]},
+        {"id": "5", "title": "Leadership", "subclauses": [
+          {"id": "5.1", "title": "Leadership and commitment", "subclauses": [
+            {"id": "5.1.1", "title": "General"},
+            {"id": "5.1.2", "title": "Governing body",
+              "delta": {"type": "enhanced", "note": "Enhanced governing body requirements; must demonstrate active oversight of ABMS"}},
+            {"id": "5.1.3", "title": "Anti-bribery culture",
+              "delta": {"type": "new", "note": "NEW clause requiring formalized ethical culture programme with measurable indicators"}}
+          ]},
+          {"id": "5.2", "title": "Anti-bribery policy"},
+          {"id": "5.3", "title": "Organizational roles, responsibilities and authorities", "subclauses": [
+            {"id": "5.3.1", "title": "General"},
+            {"id": "5.3.2", "title": "Top management"},
+            {"id": "5.3.3", "title": "Anti-bribery function",
+              "delta": {"type": "renamed", "from2016": "Anti-bribery compliance function", "note": "Renamed; function must have direct access to governing body; independence requirements strengthened"}}
+          ]}
+        ]},
+        {"id": "6", "title": "Planning", "subclauses": [
+          {"id": "6.1", "title": "Actions to address risks and opportunities"},
+          {"id": "6.2", "title": "Anti-bribery objectives and planning to achieve them"},
+          {"id": "6.3", "title": "Planning of changes",
+            "delta": {"type": "new", "note": "NEW clause per Harmonized Structure alignment; systematic change management for ABMS"}}
+        ]},
+        {"id": "7", "title": "Support", "subclauses": [
+          {"id": "7.1", "title": "Resources"},
+          {"id": "7.2", "title": "Competence"},
+          {"id": "7.3", "title": "Awareness and training"},
+          {"id": "7.4", "title": "Communication"},
+          {"id": "7.5", "title": "Documented information"}
+        ]},
+        {"id": "8", "title": "Operation", "subclauses": [
+          {"id": "8.1", "title": "Operational planning and control"},
+          {"id": "8.2", "title": "Due diligence"},
+          {"id": "8.3", "title": "Financial controls"},
+          {"id": "8.4", "title": "Non-financial controls",
+            "delta": {"type": "new", "note": "NEW clause; addresses non-financial anti-bribery controls beyond monetary transactions"}},
+          {"id": "8.5", "title": "Implementation of anti-bribery controls by controlled organizations and business associates"},
+          {"id": "8.6", "title": "Anti-bribery commitments"},
+          {"id": "8.7", "title": "Conflicts of interest",
+            "delta": {"type": "enhanced", "note": "Enhanced from 2016; expanded scope covering personal, financial, and organizational conflicts; requires documented register"}},
+          {"id": "8.8", "title": "Gifts, hospitality, donations and similar benefits"},
+          {"id": "8.9", "title": "Managing inadequacy of anti-bribery controls"},
+          {"id": "8.10", "title": "Raising concerns"},
+          {"id": "8.11", "title": "Investigating and dealing with bribery"}
+        ]},
+        {"id": "9", "title": "Performance evaluation", "subclauses": [
+          {"id": "9.1", "title": "Monitoring, measurement, analysis and evaluation"},
+          {"id": "9.2", "title": "Internal audit"},
+          {"id": "9.3", "title": "Management review"},
+          {"id": "9.4", "title": "Review by anti-bribery function",
+            "delta": {"type": "new", "note": "NEW clause; anti-bribery function must conduct formal periodic review with documented output to governing body"}},
+          {"id": "9.5", "title": "Review by governing body",
+            "delta": {"type": "new", "note": "NEW clause; governing body must formally review ABMS effectiveness at planned intervals"}}
+        ]},
+        {"id": "10", "title": "Improvement", "subclauses": [
+          {"id": "10.1", "title": "Continual improvement"},
+          {"id": "10.2", "title": "Nonconformity and corrective action"}
+        ]}
+      ],
+      "annexes": [
+        {
+          "id": "Annex A",
+          "title": "Guidance on bribery risk assessment (informative)",
+          "note": "Restructured in 2025 to align with Clause 4.5"
+        }
+      ]
+    },
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // ISO 50001:2018 — Energy Management System
+    // ═══════════════════════════════════════════════════════════════════════════
+    {
+      "id": "iso50001",
+      "code": "ISO 50001:2018",
+      "name": "Energy Management System",
+      "clauses": [
+        {"id": "4", "title": "Context of the organization", "subclauses": [
+          {"id": "4.1", "title": "Understanding the organization and its context"},
+          {"id": "4.2", "title": "Understanding the needs and expectations of interested parties"},
+          {"id": "4.3", "title": "Determining the scope of the energy management system"},
+          {"id": "4.4", "title": "Energy management system"}
+        ]},
+        {"id": "5", "title": "Leadership", "subclauses": [
+          {"id": "5.1", "title": "Leadership and commitment"},
+          {"id": "5.2", "title": "Energy policy"},
+          {"id": "5.3", "title": "Organizational roles, responsibilities and authorities"}
+        ]},
+        {"id": "6", "title": "Planning", "subclauses": [
+          {"id": "6.1", "title": "Actions to address risks and opportunities"},
+          {"id": "6.2", "title": "Objectives, energy targets and planning to achieve them"},
+          {"id": "6.3", "title": "Energy review"},
+          {"id": "6.4", "title": "Energy performance indicators (EnPIs)"},
+          {"id": "6.5", "title": "Energy baseline (EnB)"},
+          {"id": "6.6", "title": "Planning for collection of energy data"}
+        ]},
+        {"id": "7", "title": "Support", "subclauses": [
+          {"id": "7.1", "title": "Resources"},
+          {"id": "7.2", "title": "Competence"},
+          {"id": "7.3", "title": "Awareness"},
+          {"id": "7.4", "title": "Communication"},
+          {"id": "7.5", "title": "Documented information", "subclauses": [
+            {"id": "7.5.1", "title": "General"},
+            {"id": "7.5.2", "title": "Creating and updating"},
+            {"id": "7.5.3", "title": "Control of documented information"}
+          ]}
+        ]},
+        {"id": "8", "title": "Operation", "subclauses": [
+          {"id": "8.1", "title": "Operational planning and control"},
+          {"id": "8.2", "title": "Design"},
+          {"id": "8.3", "title": "Procurement"}
+        ]},
+        {"id": "9", "title": "Performance evaluation", "subclauses": [
+          {"id": "9.1", "title": "Monitoring, measurement, analysis and evaluation of energy performance and the EnMS", "subclauses": [
+            {"id": "9.1.1", "title": "General"},
+            {"id": "9.1.2", "title": "Evaluation of compliance with legal and other requirements"}
+          ]},
+          {"id": "9.2", "title": "Internal audit", "subclauses": [
+            {"id": "9.2.1", "title": "General"},
+            {"id": "9.2.2", "title": "Internal audit programme"}
+          ]},
+          {"id": "9.3", "title": "Management review"}
+        ]},
+        {"id": "10", "title": "Improvement", "subclauses": [
+          {"id": "10.1", "title": "Nonconformity and corrective action"},
+          {"id": "10.2", "title": "Continual improvement"}
         ]}
       ]
     }

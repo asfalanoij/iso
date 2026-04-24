@@ -75,11 +75,11 @@
   const REF_STANDARDS = [
     { id: 'iso27001', code: 'ISO/IEC 27001:2022', abbr: 'ISMS', name: 'Information Security Management', certType: 'Surveillance 1', color: '#2563EB' },
     { id: 'iso27701', code: 'ISO/IEC 27701:2019', abbr: 'PIMS', name: 'Privacy Information Management', certType: 'Surveillance 1', color: '#7C3AED' },
-    { id: 'iso37001', code: 'ISO 37001:2016', abbr: 'ABMS', name: 'Anti-Bribery Management', certType: 'New Certification', color: '#DC2626' },
     { id: 'iso20000', code: 'ISO/IEC 20000-1:2018', abbr: 'ITSMS', name: 'IT Service Management', certType: 'Surveillance 2', color: '#059669' },
-    { id: 'iso50001', code: 'ISO 50001:2018', abbr: 'EnMS', name: 'Energy Management', certType: 'Readiness / Initial Certification', color: '#D97706' },
-    { id: 'iso45001', code: 'ISO 45001:2018', abbr: 'OHSMS', name: 'Occupational Health & Safety', certType: 'Surveillance 2', color: '#0891B2' },
     { id: 'iso22301', code: 'ISO 22301:2019', abbr: 'BCMS', name: 'Business Continuity Management', certType: 'Surveillance 2', color: '#B91C1C' },
+    { id: 'iso45001', code: 'ISO 45001:2018', abbr: 'OHSMS', name: 'Occupational Health & Safety', certType: 'Surveillance 2', color: '#0891B2' },
+    { id: 'iso37001', code: 'ISO 37001:2016', abbr: 'ABMS', name: 'Anti-Bribery Management', certType: 'New Certification', color: '#DC2626' },
+    { id: 'iso50001', code: 'ISO 50001:2018', abbr: 'EnMS', name: 'Energy Management', certType: 'Readiness / Initial Certification', color: '#D97706' },
   ];
 
   const REF_JURISDICTIONS = {
@@ -301,7 +301,7 @@
     const cLevel = ['CTO', 'CFRMO', 'CCO', 'CEO'];
     cLevel.forEach((c, i) => genUsers.push({ id: 'U-00' + (i+2), name: c, role: 'C-Level', isoScope: 'all', department: 'Executive' }));
     
-    const isos = ['iso27001', 'iso27701', 'iso37001', 'iso20000', 'iso50001', 'iso45001', 'iso22301'];
+    const isos = ['iso27001', 'iso27701', 'iso20000', 'iso22301', 'iso45001', 'iso37001', 'iso50001'];
     let uid = 6;
     isos.forEach(iso => {
       let uIso = iso.replace('iso', '');
@@ -338,15 +338,6 @@
           { id: 'M-27701-05', name: 'Surveillance Audit (CB)', phase: 2, startWeek: 26, durationWeeks: 3, ownerGroup: 'CB', status: 'not-started' },
           { id: 'M-27701-06', name: 'Closing NCR/Findings', phase: 2, startWeek: 29, durationWeeks: 1, ownerGroup: 'Internal Audit', status: 'not-started' },
         ],
-        iso37001: [
-          { id: 'M-37001-01', name: 'Gap Analysis', phase: 1, startWeek: 8.7, durationWeeks: 2, ownerGroup: 'Konsultan 2', status: 'done' },
-          { id: 'M-37001-02', name: 'Document Review & Update', phase: 1, startWeek: 10.7, durationWeeks: 6, ownerGroup: 'Konsultan 2', status: 'in-progress' },
-          { id: 'M-37001-03', name: 'Internal Audit', phase: 1, startWeek: 17, durationWeeks: 3, ownerGroup: 'Internal Audit', status: 'not-started' },
-          { id: 'M-37001-04', name: 'Management Review', phase: 1, startWeek: 21, durationWeeks: 1, ownerGroup: 'Internal Audit', status: 'not-started' },
-          { id: 'M-37001-05', name: 'Stage 1 Audit (CB)', phase: 2, startWeek: 23, durationWeeks: 1, ownerGroup: 'CB', status: 'not-started' },
-          { id: 'M-37001-06', name: 'Stage 2 Audit (CB)', phase: 2, startWeek: 26, durationWeeks: 3, ownerGroup: 'CB', status: 'not-started' },
-          { id: 'M-37001-07', name: 'Closing NCR/Findings', phase: 2, startWeek: 29, durationWeeks: 1, ownerGroup: 'Internal Audit', status: 'not-started' },
-        ],
         iso20000: [
           { id: 'M-20000-01', name: 'Gap Analysis', phase: 1, startWeek: 9, durationWeeks: 3, ownerGroup: 'Konsultan 2', status: 'done' },
           { id: 'M-20000-02', name: 'Document Review & Update', phase: 1, startWeek: 12, durationWeeks: 5, ownerGroup: 'Konsultan 2', status: 'in-progress' },
@@ -354,23 +345,6 @@
           { id: 'M-20000-04', name: 'Management Review', phase: 1, startWeek: 21, durationWeeks: 1, ownerGroup: 'Internal Audit', status: 'not-started' },
           { id: 'M-20000-05', name: 'Surveillance Audit (CB)', phase: 2, startWeek: 26, durationWeeks: 3, ownerGroup: 'CB', status: 'not-started' },
           { id: 'M-20000-06', name: 'Closing NCR/Findings', phase: 2, startWeek: 29, durationWeeks: 1, ownerGroup: 'Internal Audit', status: 'not-started' },
-        ],
-        iso50001: [
-          { id: 'M-50001-01', name: 'Gap Analysis', phase: 1, startWeek: 8.7, durationWeeks: 3, ownerGroup: 'Konsultan 1', status: 'in-progress' },
-          { id: 'M-50001-02', name: 'Document Review & Update', phase: 1, startWeek: 11.7, durationWeeks: 7, ownerGroup: 'Konsultan 1', status: 'not-started' },
-          { id: 'M-50001-03', name: 'Internal Audit', phase: 1, startWeek: 18.7, durationWeeks: 3, ownerGroup: 'Internal Audit', status: 'not-started' },
-          { id: 'M-50001-04', name: 'Management Review', phase: 1, startWeek: 22, durationWeeks: 1, ownerGroup: 'Internal Audit', status: 'not-started' },
-          { id: 'M-50001-05', name: 'Stage 1 Audit (CB)', phase: 2, startWeek: 24, durationWeeks: 1, ownerGroup: 'CB', status: 'not-started' },
-          { id: 'M-50001-06', name: 'Stage 2 Audit (CB)', phase: 2, startWeek: 26, durationWeeks: 3, ownerGroup: 'CB', status: 'not-started' },
-          { id: 'M-50001-07', name: 'Closing NCR/Findings', phase: 2, startWeek: 29, durationWeeks: 1, ownerGroup: 'Internal Audit', status: 'not-started' },
-        ],
-        iso45001: [
-          { id: 'M-45001-01', name: 'Gap Analysis', phase: 1, startWeek: 9.7, durationWeeks: 2, ownerGroup: 'Konsultan 2', status: 'done' },
-          { id: 'M-45001-02', name: 'Document Review & Update', phase: 1, startWeek: 11.7, durationWeeks: 5, ownerGroup: 'Konsultan 2', status: 'in-progress' },
-          { id: 'M-45001-03', name: 'Internal Audit', phase: 1, startWeek: 17.7, durationWeeks: 3, ownerGroup: 'Internal Audit', status: 'not-started' },
-          { id: 'M-45001-04', name: 'Management Review', phase: 1, startWeek: 21, durationWeeks: 1, ownerGroup: 'Internal Audit', status: 'not-started' },
-          { id: 'M-45001-05', name: 'Surveillance Audit (CB)', phase: 2, startWeek: 26, durationWeeks: 3, ownerGroup: 'CB', status: 'not-started' },
-          { id: 'M-45001-06', name: 'Closing NCR/Findings', phase: 2, startWeek: 29, durationWeeks: 1, ownerGroup: 'Internal Audit', status: 'not-started' },
         ],
         iso22301: [
           { id: 'M-22301-01', name: 'Scope & Business Impact Analysis (BIA)', phase: 1, startWeek: 8.7, durationWeeks: 4, ownerGroup: 'Konsultan 1', status: 'done' },
@@ -380,6 +354,32 @@
           { id: 'M-22301-05', name: 'Internal Audit', phase: 2, startWeek: 22, durationWeeks: 3, ownerGroup: 'Internal Audit', status: 'not-started' },
           { id: 'M-22301-06', name: 'Stage 1 Audit (CB)', phase: 2, startWeek: 25, durationWeeks: 1, ownerGroup: 'CB', status: 'not-started' },
           { id: 'M-22301-07', name: 'Stage 2 Audit (CB)', phase: 2, startWeek: 26, durationWeeks: 3, ownerGroup: 'CB', status: 'not-started' },
+        ],
+        iso45001: [
+          { id: 'M-45001-01', name: 'Gap Analysis', phase: 1, startWeek: 9.7, durationWeeks: 2, ownerGroup: 'Konsultan 2', status: 'done' },
+          { id: 'M-45001-02', name: 'Document Review & Update', phase: 1, startWeek: 11.7, durationWeeks: 5, ownerGroup: 'Konsultan 2', status: 'in-progress' },
+          { id: 'M-45001-03', name: 'Internal Audit', phase: 1, startWeek: 17.7, durationWeeks: 3, ownerGroup: 'Internal Audit', status: 'not-started' },
+          { id: 'M-45001-04', name: 'Management Review', phase: 1, startWeek: 21, durationWeeks: 1, ownerGroup: 'Internal Audit', status: 'not-started' },
+          { id: 'M-45001-05', name: 'Surveillance Audit (CB)', phase: 2, startWeek: 26, durationWeeks: 3, ownerGroup: 'CB', status: 'not-started' },
+          { id: 'M-45001-06', name: 'Closing NCR/Findings', phase: 2, startWeek: 29, durationWeeks: 1, ownerGroup: 'Internal Audit', status: 'not-started' },
+        ],
+        iso37001: [
+          { id: 'M-37001-01', name: 'Gap Analysis', phase: 1, startWeek: 8.7, durationWeeks: 2, ownerGroup: 'Konsultan 2', status: 'done' },
+          { id: 'M-37001-02', name: 'Document Review & Update', phase: 1, startWeek: 10.7, durationWeeks: 6, ownerGroup: 'Konsultan 2', status: 'in-progress' },
+          { id: 'M-37001-03', name: 'Internal Audit', phase: 1, startWeek: 17, durationWeeks: 3, ownerGroup: 'Internal Audit', status: 'not-started' },
+          { id: 'M-37001-04', name: 'Management Review', phase: 1, startWeek: 21, durationWeeks: 1, ownerGroup: 'Internal Audit', status: 'not-started' },
+          { id: 'M-37001-05', name: 'Stage 1 Audit (CB)', phase: 2, startWeek: 23, durationWeeks: 1, ownerGroup: 'CB', status: 'not-started' },
+          { id: 'M-37001-06', name: 'Stage 2 Audit (CB)', phase: 2, startWeek: 26, durationWeeks: 3, ownerGroup: 'CB', status: 'not-started' },
+          { id: 'M-37001-07', name: 'Closing NCR/Findings', phase: 2, startWeek: 29, durationWeeks: 1, ownerGroup: 'Internal Audit', status: 'not-started' },
+        ],
+        iso50001: [
+          { id: 'M-50001-01', name: 'Gap Analysis', phase: 1, startWeek: 8.7, durationWeeks: 3, ownerGroup: 'Konsultan 1', status: 'in-progress' },
+          { id: 'M-50001-02', name: 'Document Review & Update', phase: 1, startWeek: 11.7, durationWeeks: 7, ownerGroup: 'Konsultan 1', status: 'not-started' },
+          { id: 'M-50001-03', name: 'Internal Audit', phase: 1, startWeek: 18.7, durationWeeks: 3, ownerGroup: 'Internal Audit', status: 'not-started' },
+          { id: 'M-50001-04', name: 'Management Review', phase: 1, startWeek: 22, durationWeeks: 1, ownerGroup: 'Internal Audit', status: 'not-started' },
+          { id: 'M-50001-05', name: 'Stage 1 Audit (CB)', phase: 2, startWeek: 24, durationWeeks: 1, ownerGroup: 'CB', status: 'not-started' },
+          { id: 'M-50001-06', name: 'Stage 2 Audit (CB)', phase: 2, startWeek: 26, durationWeeks: 3, ownerGroup: 'CB', status: 'not-started' },
+          { id: 'M-50001-07', name: 'Closing NCR/Findings', phase: 2, startWeek: 29, durationWeeks: 1, ownerGroup: 'Internal Audit', status: 'not-started' },
         ],
       },
 
@@ -397,17 +397,29 @@
           { id: 'D-27701-03', name: 'Data Subject Rights Procedure', status: 'draft' },
           { id: 'D-27701-04', name: 'Internal Audit Report', status: 'not-started' },
         ],
-        iso37001: [
-          { id: 'D-37001-01', name: 'Anti-Bribery Policy', status: 'approved' },
-          { id: 'D-37001-02', name: 'ABMS Procedure', status: 'in-review' },
-          { id: 'D-37001-03', name: 'Due Diligence Records', status: 'draft' },
-          { id: 'D-37001-04', name: 'Management Review Minutes', status: 'not-started' },
-        ],
         iso20000: [
           { id: 'D-20000-01', name: 'Service Management Policy', status: 'approved' },
           { id: 'D-20000-02', name: 'Service Level Agreements', status: 'in-review' },
           { id: 'D-20000-03', name: 'Incident Management Procedure', status: 'approved' },
           { id: 'D-20000-04', name: 'Internal Audit Report', status: 'not-started' },
+        ],
+        iso22301: [
+          { id: 'D-22301-01', name: 'Business Continuity Policy', status: 'in-review' },
+          { id: 'D-22301-02', name: 'Business Impact Analysis (SLA/Voice)', status: 'draft' },
+          { id: 'D-22301-03', name: 'Business Continuity Plans (BCP)', status: 'not-started' },
+          { id: 'D-22301-04', name: 'Exercise & Testing Reports', status: 'not-started' },
+        ],
+        iso45001: [
+          { id: 'D-45001-01', name: 'OH&S Policy', status: 'approved' },
+          { id: 'D-45001-02', name: 'HIRA Register', status: 'in-review' },
+          { id: 'D-45001-03', name: 'Emergency Response Plan', status: 'approved' },
+          { id: 'D-45001-04', name: 'Internal Audit Report', status: 'not-started' },
+        ],
+        iso37001: [
+          { id: 'D-37001-01', name: 'Anti-Bribery Policy', status: 'approved' },
+          { id: 'D-37001-02', name: 'ABMS Procedure', status: 'in-review' },
+          { id: 'D-37001-03', name: 'Due Diligence Records', status: 'draft' },
+          { id: 'D-37001-04', name: 'Management Review Minutes', status: 'not-started' },
         ],
         iso50001: [
           { id: 'D-50001-01', name: 'Energy Policy', status: 'draft' },
@@ -416,18 +428,6 @@
           { id: 'D-50001-04', name: 'EnPIs & Measurement Plan', status: 'not-started' },
           { id: 'D-50001-05', name: 'Internal Audit Report', status: 'not-started' },
         ],
-        iso45001: [
-          { id: 'D-45001-01', name: 'OH&S Policy', status: 'approved' },
-          { id: 'D-45001-02', name: 'HIRA Register', status: 'in-review' },
-          { id: 'D-45001-03', name: 'Emergency Response Plan', status: 'approved' },
-          { id: 'D-45001-04', name: 'Internal Audit Report', status: 'not-started' },
-        ],
-        iso22301: [
-          { id: 'D-22301-01', name: 'Business Continuity Policy', status: 'in-review' },
-          { id: 'D-22301-02', name: 'Business Impact Analysis (SLA/Voice)', status: 'draft' },
-          { id: 'D-22301-03', name: 'Business Continuity Plans (BCP)', status: 'not-started' },
-          { id: 'D-22301-04', name: 'Exercise & Testing Reports', status: 'not-started' },
-        ]
       },
 
       // ── OPERATIONAL: evidence (M:M to standards, clauseRefs, and Annex A controls) ──
@@ -441,7 +441,7 @@
         { id: 'E-007', name: 'Scope Document (ISMS / PIMS)', type: 'Record', standardIds: ['iso27001', 'iso27701'], clauseRefs: ['4.3'], status: 'approved', owner: 'IT Security', due: '2026-04-30', notes: 'Shared scope.' },
         { id: 'E-008', name: 'Scope Document (ABMS)', type: 'Record', standardIds: ['iso37001'], clauseRefs: ['4.3'], status: 'approved', owner: 'Legal', due: '2026-04-30', notes: '' },
         { id: 'E-009', name: 'Scope Document (EnMS)', type: 'Record', standardIds: ['iso50001'], clauseRefs: ['4.3'], status: 'draft', owner: 'Facility Mgmt', due: '2026-05-15', notes: 'New cert.' },
-        { id: 'E-010', name: 'Scope Document (OHS / ITSMS)', type: 'Record', standardIds: ['iso45001', 'iso20000'], clauseRefs: ['4.3'], status: 'approved', owner: 'HR', due: '2026-04-30', notes: 'Shared.' },
+        { id: 'E-010', name: 'Scope Document (OHS / ITSMS)', type: 'Record', standardIds: ['iso20000', 'iso45001'], clauseRefs: ['4.3'], status: 'approved', owner: 'HR', due: '2026-04-30', notes: 'Shared.' },
         { id: 'E-011', name: 'Risk Assessment & Treatment (ISMS)', type: 'Report', standardIds: ['iso27001', 'iso27701'], clauseRefs: ['6.1', '8.2', '8.3', 'A.5.29', 'A.5.30', 'A.8.8'], status: 'in-review', owner: 'IT Security', due: '2026-05-31', notes: '' },
         { id: 'E-012', name: 'Bribery Risk Assessment', type: 'Report', standardIds: ['iso37001'], clauseRefs: ['4.5', '6.1', '8.2'], status: 'in-review', owner: 'Legal', due: '2026-05-31', notes: 'Must extend to USA (FCPA) and HK (ICAC).' },
         { id: 'E-013', name: 'OHS HIRA', type: 'Report', standardIds: ['iso45001'], clauseRefs: ['6.1', '6.1.2', '8.1'], status: 'in-review', owner: 'HR', due: '2026-05-31', notes: 'Must include marine/offshore operations.' },
@@ -452,18 +452,18 @@
         { id: 'E-018', name: 'Gift & Hospitality Register', type: 'Register', standardIds: ['iso37001'], clauseRefs: ['8.8'], status: 'in-review', owner: 'Legal', due: '2026-05-31', notes: '' },
         { id: 'E-019', name: 'Service Catalogue & SLAs', type: 'Record', standardIds: ['iso20000'], clauseRefs: ['8.2.4', '8.3.3', '7.5'], status: 'approved', owner: 'IT Security', due: '2026-05-15', notes: '' },
         { id: 'E-020', name: 'Energy Objectives & Action Plans', type: 'Plan', standardIds: ['iso50001'], clauseRefs: ['6.2', '6.3'], status: 'not-started', owner: 'Facility Mgmt', due: '2026-06-15', notes: '' },
-        { id: 'E-021', name: 'Org Chart & Roles Matrix', type: 'Record', standardIds: ['iso27001', 'iso27701', 'iso37001', 'iso20000', 'iso50001', 'iso45001'], clauseRefs: ['5.3', 'A.5.2', 'A.5.3'], status: 'approved', owner: 'HR', due: '2026-04-30', notes: 'SSoT for all standards.' },
-        { id: 'E-022', name: 'Competence Matrix & Training Records', type: 'Training', standardIds: ['iso27001', 'iso27701', 'iso37001', 'iso20000', 'iso50001', 'iso45001'], clauseRefs: ['7.2', '7.3', 'A.6.1', 'A.6.2', 'A.6.3'], status: 'in-review', owner: 'HR', due: '2026-05-31', notes: '' },
+        { id: 'E-021', name: 'Org Chart & Roles Matrix', type: 'Record', standardIds: ['iso27001', 'iso27701', 'iso20000', 'iso45001', 'iso37001', 'iso50001'], clauseRefs: ['5.3', 'A.5.2', 'A.5.3'], status: 'approved', owner: 'HR', due: '2026-04-30', notes: 'SSoT for all standards.' },
+        { id: 'E-022', name: 'Competence Matrix & Training Records', type: 'Training', standardIds: ['iso27001', 'iso27701', 'iso20000', 'iso45001', 'iso37001', 'iso50001'], clauseRefs: ['7.2', '7.3', 'A.6.1', 'A.6.2', 'A.6.3'], status: 'in-review', owner: 'HR', due: '2026-05-31', notes: '' },
         { id: 'E-023', name: 'Anti-Bribery Training Records', type: 'Training', standardIds: ['iso37001'], clauseRefs: ['7.2', '7.3', 'A.6.3'], status: 'in-review', owner: 'HR', due: '2026-05-31', notes: '' },
-        { id: 'E-024', name: 'Internal Audit Programme & Schedule', type: 'Plan', standardIds: ['iso27001', 'iso27701', 'iso37001', 'iso20000', 'iso50001', 'iso45001'], clauseRefs: ['9.2', 'A.5.35'], status: 'in-review', owner: 'Internal Audit', due: '2026-05-31', notes: '' },
+        { id: 'E-024', name: 'Internal Audit Programme & Schedule', type: 'Plan', standardIds: ['iso27001', 'iso27701', 'iso20000', 'iso45001', 'iso37001', 'iso50001'], clauseRefs: ['9.2', 'A.5.35'], status: 'in-review', owner: 'Internal Audit', due: '2026-05-31', notes: '' },
         { id: 'E-025', name: 'Internal Audit Reports (ISMS/PIMS)', type: 'Report', standardIds: ['iso27001', 'iso27701'], clauseRefs: ['9.2', '10.1', 'A.5.35', 'A.5.36'], status: 'not-started', owner: 'Internal Audit', due: '2026-07-15', notes: '' },
         { id: 'E-026', name: 'Internal Audit Report (ABMS)', type: 'Report', standardIds: ['iso37001'], clauseRefs: ['9.2', '10.1'], status: 'not-started', owner: 'Internal Audit', due: '2026-07-15', notes: '' },
         { id: 'E-027', name: 'Internal Audit Reports (ITSMS/OHS)', type: 'Report', standardIds: ['iso20000', 'iso45001'], clauseRefs: ['9.2', '10.1'], status: 'not-started', owner: 'Internal Audit', due: '2026-07-15', notes: '' },
         { id: 'E-028', name: 'Internal Audit Report (EnMS)', type: 'Report', standardIds: ['iso50001'], clauseRefs: ['9.2', '10.1'], status: 'not-started', owner: 'Internal Audit', due: '2026-07-15', notes: '' },
-        { id: 'E-029', name: 'Management Review Minutes (All)', type: 'Record', standardIds: ['iso27001', 'iso27701', 'iso37001', 'iso20000', 'iso50001', 'iso45001'], clauseRefs: ['9.3'], status: 'not-started', owner: 'Top Management', due: '2026-07-31', notes: '' },
-        { id: 'E-030', name: 'NCR Log & Corrective Action Records', type: 'Register', standardIds: ['iso27001', 'iso27701', 'iso37001', 'iso20000', 'iso50001', 'iso45001'], clauseRefs: ['10.1', '10.2', 'A.5.27', 'A.5.28'], status: 'not-started', owner: 'Internal Audit', due: '2026-09-30', notes: '' },
+        { id: 'E-029', name: 'Management Review Minutes (All)', type: 'Record', standardIds: ['iso27001', 'iso27701', 'iso20000', 'iso45001', 'iso37001', 'iso50001'], clauseRefs: ['9.3'], status: 'not-started', owner: 'Top Management', due: '2026-07-31', notes: '' },
+        { id: 'E-030', name: 'NCR Log & Corrective Action Records', type: 'Register', standardIds: ['iso27001', 'iso27701', 'iso20000', 'iso45001', 'iso37001', 'iso50001'], clauseRefs: ['10.1', '10.2', 'A.5.27', 'A.5.28'], status: 'not-started', owner: 'Internal Audit', due: '2026-09-30', notes: '' },
         { id: 'E-031', name: 'Emergency Response Procedures', type: 'Procedure', standardIds: ['iso45001'], clauseRefs: ['8.2', 'A.5.24', 'A.5.26', 'A.5.29', 'A.7.4'], status: 'approved', owner: 'HR', due: '2026-04-30', notes: '' },
-        { id: 'E-032', name: 'Incident Management Procedure', type: 'Procedure', standardIds: ['iso20000', 'iso27001'], clauseRefs: ['8.1', 'A.5.24', 'A.5.25', 'A.5.26', 'A.5.27', 'A.5.28', 'A.6.8', 'A.8.15', 'A.8.16'], status: 'approved', owner: 'IT Security', due: '2026-04-30', notes: '' },
+        { id: 'E-032', name: 'Incident Management Procedure', type: 'Procedure', standardIds: ['iso27001', 'iso20000'], clauseRefs: ['8.1', 'A.5.24', 'A.5.25', 'A.5.26', 'A.5.27', 'A.5.28', 'A.6.8', 'A.8.15', 'A.8.16'], status: 'approved', owner: 'IT Security', due: '2026-04-30', notes: '' },
         { id: 'E-033', name: 'Access Control & User Management', type: 'Procedure', standardIds: ['iso27001', 'iso27701'], clauseRefs: ['8.1', 'A.5.15', 'A.5.16', 'A.5.17', 'A.5.18', 'A.8.2', 'A.8.3', 'A.8.5'], status: 'in-review', owner: 'IT Security', due: '2026-05-31', notes: '' },
         { id: 'E-034', name: 'Procurement Procedure (ABMS)', type: 'Procedure', standardIds: ['iso37001'], clauseRefs: ['8.1', '8.3', 'A.5.19', 'A.5.20', 'A.5.21'], status: 'in-review', owner: 'Legal', due: '2026-05-31', notes: '' },
         { id: 'E-035', name: 'Legal & Regulatory Requirements Register', type: 'Register', standardIds: ['iso27001', 'iso45001', 'iso50001'], clauseRefs: ['4.2', '6.1', 'A.5.31', 'A.5.32', 'A.5.33'], status: 'in-review', owner: 'Legal', due: '2026-05-31', notes: 'Covers UU ITE, PP PSTE, K3, energy regs.' },
@@ -541,9 +541,9 @@
         { id: 'R-010', standardIds: ['iso50001'], category: 'Legal & Regulatory', title: 'Regulatory non-compliance — energy conservation mandate', description: 'PP ESDM requires EnMS for organizations >6,000 toe/year. Telin data centers likely exceed threshold.', clauseRef: '4.2', likelihood: 3, impact: 4, controls: 'EnMS programme initiated.', residualL: 1, residualI: 4, treatment: 'treat', owner: 'Facility Mgmt', reviewDate: '2026-08-30', treatmentPlan: 'Confirm energy figures vs. threshold. File statutory energy conservation report with Kementerian ESDM.', status: 'mitigating', notes: '', ncrIds: [] },
         { id: 'R-011', standardIds: ['iso45001'], category: 'Occupational Health & Safety', title: 'Submarine cable maintenance — diving fatality', description: 'Commercial diving: high consequence, low probability. Criminal liability if fatality.', clauseRef: '6.1.2', likelihood: 1, impact: 5, controls: 'Diving contractor OHS assessment; basic JSA.', residualL: 1, residualI: 5, treatment: 'treat', owner: 'HR', reviewDate: '2026-07-15', treatmentPlan: 'Expand HIRA to marine ops. Pre-qualify diving contractors on ISO 45001 criteria.', status: 'open', notes: 'Linked to NCR-006.', ncrIds: ['NCR-006'] },
         { id: 'R-012', standardIds: ['iso45001'], category: 'Legal & Regulatory', title: 'SMK3 audit failure — Indonesia statutory requirement', description: 'PP 50/2012 mandatory government OHS audit every 3 years — separate from ISO 45001.', clauseRef: '9.1.2', likelihood: 2, impact: 4, controls: 'ISO 45001 programme in place. SMK3 cross-mapping initiated.', residualL: 1, residualI: 3, treatment: 'treat', owner: 'HR', reviewDate: '2026-09-30', treatmentPlan: 'Map ISO 45001 to PP 50/2012 SMK3. Schedule Kemnaker audit separately.', status: 'mitigating', notes: 'SMK3 is a SEPARATE government audit.', ncrIds: [] },
-        { id: 'R-016', standardIds: ['iso22301', 'iso20000'], category: 'IT Service Continuity', title: 'Hyperscaler SLA breach due to dual submarine cable cut', description: 'Concurrent cuts traversing Pacific routes causing wholesale transit degradation. Loss exceeds 15m RTO leading to SLA penalty offsets.', clauseRef: '8.2.2', likelihood: 2, impact: 5, controls: 'BGP multi-homing; diverse core rings.', residualL: 2, residualI: 4, treatment: 'treat', owner: 'Operations', reviewDate: '2026-06-30', treatmentPlan: 'Engage partner IRU swaps. Validate automated NeuTrafiX platform rerouting. ISO 22301 BIA integration.', status: 'mitigating', notes: 'Commercial integration required.', ncrIds: [] },
+        { id: 'R-016', standardIds: ['iso20000', 'iso22301'], category: 'IT Service Continuity', title: 'Hyperscaler SLA breach due to dual submarine cable cut', description: 'Concurrent cuts traversing Pacific routes causing wholesale transit degradation. Loss exceeds 15m RTO leading to SLA penalty offsets.', clauseRef: '8.2.2', likelihood: 2, impact: 5, controls: 'BGP multi-homing; diverse core rings.', residualL: 2, residualI: 4, treatment: 'treat', owner: 'Operations', reviewDate: '2026-06-30', treatmentPlan: 'Engage partner IRU swaps. Validate automated NeuTrafiX platform rerouting. ISO 22301 BIA integration.', status: 'mitigating', notes: 'Commercial integration required.', ncrIds: [] },
         // Cross-cutting
-        { id: 'R-013', standardIds: ['iso27001', 'iso27701', 'iso37001', 'iso20000', 'iso50001', 'iso45001', 'iso22301'], category: 'Reputational', title: 'CB audit Major NC — certificate suspension', description: 'Unresolved Major NCs → certificate suspension → hyperscaler contract breach, PSE regulatory impact.', clauseRef: '10.1', likelihood: 2, impact: 5, controls: 'Internal audit programme. NCR tracker. Consultant engagement.', residualL: 1, residualI: 4, treatment: 'treat', owner: 'Internal Audit', reviewDate: '2026-10-31', treatmentPlan: 'Resolve all Tier 1 NCRs before Stage 1. Build Audit Readiness Self-Assessment. Mock CB audit June 2026.', status: 'mitigating', notes: 'Master risk — all other risks feed into this.', ncrIds: [] },
+        { id: 'R-013', standardIds: ['iso27001', 'iso27701', 'iso20000', 'iso22301', 'iso45001', 'iso37001', 'iso50001'], category: 'Reputational', title: 'CB audit Major NC — certificate suspension', description: 'Unresolved Major NCs → certificate suspension → hyperscaler contract breach, PSE regulatory impact.', clauseRef: '10.1', likelihood: 2, impact: 5, controls: 'Internal audit programme. NCR tracker. Consultant engagement.', residualL: 1, residualI: 4, treatment: 'treat', owner: 'Internal Audit', reviewDate: '2026-10-31', treatmentPlan: 'Resolve all Tier 1 NCRs before Stage 1. Build Audit Readiness Self-Assessment. Mock CB audit June 2026.', status: 'mitigating', notes: 'Master risk — all other risks feed into this.', ncrIds: [] },
         { id: 'R-014', standardIds: ['iso27001', 'iso37001'], category: 'Legal & Regulatory', title: 'CFIUS/Team Telecom action against Telin USA', description: 'US gov could revoke FCC Section 214 authority. Precedent: China Telecom USA 2021.', clauseRef: '4.2', likelihood: 2, impact: 5, controls: 'FCC licence maintained. Legal counsel engaged.', residualL: 1, residualI: 5, treatment: 'treat', owner: 'Legal', reviewDate: '2026-07-30', treatmentPlan: 'Engage US telecom regulatory counsel. Maintain FCPA/ABMS programme. Prepare network security agreement.', status: 'open', notes: 'CRITICAL risk unique to Telin as SOE in USA.', ncrIds: [] },
         { id: 'R-015', standardIds: ['iso27001'], category: 'Legal & Regulatory', title: 'SOCI Act (Australia) — CIRMP non-compliance', description: 'CIRMP obligation as Australian carrier. Civil penalties AUD 250,000+.', clauseRef: '4.2', likelihood: 3, impact: 4, controls: 'ISO 27001 programme. SOCI CIRMP status unclear.', residualL: 2, residualI: 4, treatment: 'treat', owner: 'Legal', reviewDate: '2026-06-30', treatmentPlan: 'Confirm Telin Australia CIRMP obligation. Map ISO 27001 controls to CIRMP. File CIRMP with Australian Gov.', status: 'open', notes: 'Separate statutory obligation from ISO 27001.', ncrIds: [] },
       ],
@@ -557,7 +557,7 @@
         { id: 'LR-005', jurisdiction: 'ID', name: 'PP No. 50/2012 — SMK3', type: 'mandatory', priority: 'critical', standardIds: ['iso45001'], clause: '4.2,9.1.2', status: 'partial', owner: 'HR', lastReview: '2026-02-01', nextReview: '2026-05-01', frequency: 'Quarterly', evidence: 'ISO 45001 in progress. SMK3 cross-mapping incomplete.', action: 'Map ISO 45001 to SMK3. Schedule Kemnaker audit separately.', notes: 'SEPARATE government audit — not replaced by ISO 45001 CB.' },
         { id: 'LR-006', jurisdiction: 'ID', name: 'PP ESDM — Energy Conservation (>6,000 toe/year)', type: 'mandatory', priority: 'high', standardIds: ['iso50001'], clause: '4.2,9.1.2', status: 'not-assessed', owner: 'Facility Mgmt', lastReview: '', nextReview: '2026-06-01', frequency: 'Annual', evidence: 'Energy consumption data not yet compiled.', action: 'Confirm consumption vs. threshold. File statutory report if applicable.', notes: '' },
         { id: 'LR-007', jurisdiction: 'ID', name: 'UU No. 31/1999 jo. 20/2001 — Tipikor + KPK', type: 'mandatory', priority: 'critical', standardIds: ['iso37001'], clause: '4.2,6.1', status: 'partial', owner: 'Legal', lastReview: '2026-01-01', nextReview: '2026-07-01', frequency: 'Semi-annual', evidence: 'Anti-bribery policy exists. ABMS recertification in progress.', action: 'Strengthen Tipikor controls aligned with ISO 37001. Functional whistleblower channel.', notes: 'BUMN under heightened KPK scrutiny.' },
-        { id: 'LR-008', jurisdiction: 'ID', name: 'Kementerian BUMN GCG Guidelines (PER-09/MBU/2012)', type: 'mandatory', priority: 'high', standardIds: ['iso37001', 'iso27001'], clause: '5.1,5.3', status: 'compliant', owner: 'Top Management', lastReview: '2026-01-01', nextReview: '2026-07-01', frequency: 'Annual', evidence: 'Annual GCG self-assessment submitted.', action: '', notes: '' },
+        { id: 'LR-008', jurisdiction: 'ID', name: 'Kementerian BUMN GCG Guidelines (PER-09/MBU/2012)', type: 'mandatory', priority: 'high', standardIds: ['iso27001', 'iso37001'], clause: '5.1,5.3', status: 'compliant', owner: 'Top Management', lastReview: '2026-01-01', nextReview: '2026-07-01', frequency: 'Annual', evidence: 'Annual GCG self-assessment submitted.', action: '', notes: '' },
         { id: 'LR-009', jurisdiction: 'SG', name: 'PDPA 2012 amended 2020 (Singapore)', type: 'mandatory', priority: 'critical', standardIds: ['iso27701'], clause: '4.2,8.2', status: 'partial', owner: 'Legal', lastReview: '2026-02-01', nextReview: '2026-05-01', frequency: 'Quarterly', evidence: 'ISO 27701 in progress. 3-day PDPC breach notification not formally documented.', action: 'Implement 3-day breach SOP. Register with PDPC.', notes: 'PDPC recognizes ISO 27701 as PDPA accountability evidence.' },
         { id: 'LR-010', jurisdiction: 'SG', name: 'Cybersecurity Act 2018 — CII (Telecom)', type: 'mandatory', priority: 'critical', standardIds: ['iso27001'], clause: '4.2,9.1.2', status: 'partial', owner: 'IT Security', lastReview: '2026-02-01', nextReview: '2026-05-01', frequency: 'Quarterly', evidence: 'ISO 27001 in progress. CII designation status needs confirmation.', action: 'Confirm CII designation with CSA. Map controls to CII CoP. Ensure 2-hour incident reporting.', notes: '' },
         { id: 'LR-011', jurisdiction: 'HK', name: 'PDPO Cap. 486 amended 2021 (Hong Kong)', type: 'mandatory', priority: 'critical', standardIds: ['iso27701'], clause: '4.2,8.2', status: 'partial', owner: 'Legal', lastReview: '2026-02-01', nextReview: '2026-05-01', frequency: 'Quarterly', evidence: 'ISO 27701 in progress. Cross-border transfer HK→ID needs Section 33 review.', action: 'Conduct PDPO Section 33 cross-border transfer assessment. Implement DPA with HQ.', notes: '' },
