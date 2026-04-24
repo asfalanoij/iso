@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Telin — NCR & Corrective Action Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<script src="store.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0D1B2A; --red:#E2001A;
+  --gray-50:#f7f7f5; --gray-100:#f1f1f0; --gray-200:#e9ecef;
+  --gray-300:#dee2e6; --gray-500:#868685; --gray-600:#6c757d;
+  --gray-700:#37352f; --gray-900:#050505;
+  --font:'Plus Jakarta Sans',sans-serif; --mono:'DM Mono',monospace;
+  --shadow:0 1px 3px rgba(15, 15, 15, 0.1); --shadow-sm: 0 1px 2px rgba(15, 15, 15, 0.1);
+  --radius:6px; --radius-lg:10px;
+}
+html,body,#root{height:100%;font-family:var(--font);background:var(--gray-50);color:var(--gray-900);font-size:13px}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:3px}
+button,input,select,textarea{font-family:var(--font)}
+input,select,textarea{border:1px solid var(--gray-300);border-radius:6px;padding:7px 10px;font-size:13px;outline:none;background:#fff;transition:border-color .15s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+</style>
+</head>
+<body><div id="root"></div>
+<script type="text/babel">
+const {useState,useMemo,useEffect} = React;
+
+const STD_META = {
+  iso27001:{abbr:'ISMS',color:'#2563EB'},iso27701:{abbr:'PIMS',color:'#7C3AED'},
+  iso37001:{abbr:'ABMS',color:'#DC2626'},iso20000:{abbr:'ITSMS',color:'#059669'},
+  iso50001:{abbr:'EnMS',color:'#D97706'},iso45001:{abbr:'OHSMS',color:'#0891B2'},
+  iso22301:{abbr:'BCMS',color:'#B91C1C'},
+};
+
+const SEVERITY = {
+  major:{label:'Major NC',color:'#DC2626',bg:'#FEE2E2',icon:'🔴'},
+  minor:{label:'Minor NC',color:'#D97706',bg:'#FEF3C7',icon:'🟡'},
+  ofi:{label:'OFI',color:'#2563EB',bg:'#EFF6FF',icon:'🔵'},
+};
+const STATUS = {
+  open:{label:'Open',color:'#DC2626',bg:'#FEE2E2'},
+  'in-progress':{label:'In Progress',color:'#D97706',bg:'#FEF3C7'},
+  'pending-verification':{label:'Pending Verification',color:'#7C3AED',bg:'#F5F3FF'},
+  closed:{label:'Closed',color:'#16A34A',bg:'#DCFCE7'},
+  overdue:{label:'Overdue',color:'#9A3412',bg:'#FFEDD5'},
+};
+const PHASES = ['Internal Audit','Stage 1 (CB)','Stage 2 (CB)','Surveillance','Recertification'];
+const OWNERS = ['Internal Audit','IT Security','Legal','HR','Facility Mgmt','Top Management','Konsultan 1','Konsultan 2'];
+const METHODS = ['5-Why','Fishbone (Ishikawa)','Fault Tree','RCA Workshop'];
+
+const SEED = [
+  {id:'NCR-001',standard:'iso27001',clause:'6.1.2',phase:'Internal Audit',severity:'major',auditor:'Internal Audit',date:'2026-06-15',
+   finding:'Information security risk assessment does not cover all assets within ISMS scope. Network infrastructure at Batam PoP excluded without documented justification.',
+   containment:'Scope expanded to include Batam PoP assets. Interim review conducted.',
+   rootCause:'Risk assessment procedure did not include explicit asset inventory reconciliation step. Asset list was not updated after 2025 network expansion.',
+   method:'5-Why',
+   correctiveAction:'Update risk assessment procedure to require mandatory reconciliation with asset inventory before each risk assessment cycle. Conduct complete risk assessment including Batam PoP.',
+   caOwner:'IT Security',caDue:'2026-07-10',
+   verification:'',verifier:'',verDate:'',
+   status:'in-progress',notes:'Konsultan 1 assisting with updated procedure.'},
+  {id:'NCR-002',standard:'iso27701',clause:'7.2.1',phase:'Internal Audit',severity:'minor',auditor:'Internal Audit',date:'2026-06-15',
+   finding:'PII processing records (Art. 30 equivalent under UU PDP) do not include cross-border transfer activities to Singapore and Australia subsidiaries.',
+   containment:'Cross-border transfer register created as interim measure.',
+   rootCause:'Privacy procedure was based on legacy template that predates UU PDP enforcement (Oct 2024). Cross-border transfer provisions not addressed.',
+   method:'5-Why',
+   correctiveAction:'Revise PII processing records procedure to include cross-border transfer fields. Identify all cross-border PII flows and document basis for transfer (contractual clauses, consent, adequacy).',
+   caOwner:'Legal',caDue:'2026-07-15',
+   verification:'',verifier:'',verDate:'',
+   status:'in-progress',notes:'Legal team coordinating with Telin SG and AU for data mapping.'},
+  {id:'NCR-003',standard:'iso37001',clause:'8.7',phase:'Internal Audit',severity:'major',auditor:'Internal Audit',date:'2026-06-20',
+   finding:'Bribery risk assessment does not cover Telin USA operations. FCPA (Foreign Corrupt Practices Act) exposure not evaluated despite Telin USA operating in high-FCPA-scrutiny environment.',
+   containment:'USA operations flagged as high-priority scope extension. Legal team notified.',
+   rootCause:'Original ABMS scope document excluded international subsidiaries. Scope was set at Telin HQ only without risk-based justification for exclusion of high-risk jurisdictions.',
+   method:'5-Why',
+   correctiveAction:'Extend ABMS scope to include Telin USA and Telin HK (ICAC jurisdiction). Conduct bribery risk assessment for both entities. Update Scope Document and notify CB of scope change.',
+   caOwner:'Legal',caDue:'2026-07-05',
+   verification:'',verifier:'',verDate:'',
+   status:'open',notes:'CRITICAL — CB must be notified. Legal counsel in USA to be consulted.'},
+  {id:'NCR-004',standard:'iso20000',clause:'8.3.3',phase:'Internal Audit',severity:'minor',auditor:'Internal Audit',date:'2026-06-22',
+   finding:'Configuration management records for 3 network devices at Singapore PoP are outdated. Last configuration baseline recorded Q3 2025.',
+   containment:'Configuration audit of Singapore PoP initiated.',
+   rootCause:'Configuration management procedure requires quarterly update but no automated reminder or compliance check existed. Manual process relied on PoP team diligence.',
+   method:'5-Why',
+   correctiveAction:'Implement automated configuration management audit schedule using existing ITSM tool. Add configuration compliance check to quarterly service review agenda.',
+   caOwner:'IT Security',caDue:'2026-07-20',
+   verification:'',verifier:'',verDate:'',
+   status:'in-progress',notes:''},
+  {id:'NCR-005',standard:'iso50001',clause:'6.3',phase:'Internal Audit',severity:'major',auditor:'Internal Audit',date:'2026-06-25',
+   finding:'Energy baseline not established. EnPIs (Energy Performance Indicators) not defined. No documented energy review per clause 6.3–6.4 requirements. This is a new certification — foundational elements missing.',
+   containment:'Energy data collection from facilities management initiated.',
+   rootCause:'EnMS is a new certification. Programme timeline underestimated complexity of energy data collection from multiple PoPs and data centers. No dedicated energy manager appointed.',
+   method:'Fishbone (Ishikawa)',
+   correctiveAction:'Appoint Energy Management Representative (EMR). Conduct complete energy review covering all in-scope facilities. Establish energy baseline from 12-month historical data. Define EnPIs for data centers and office facilities. Complete by Stage 1 audit.',
+   caOwner:'Facility Mgmt',caDue:'2026-07-01',
+   verification:'',verifier:'',verDate:'',
+   status:'open',notes:'CRITICAL for new cert. CB Stage 1 will check this first.'},
+  {id:'NCR-006',standard:'iso45001',clause:'6.1.2',phase:'Internal Audit',severity:'minor',auditor:'Internal Audit',date:'2026-06-22',
+   finding:'HIRA (Hazard Identification and Risk Assessment) for submarine cable maintenance activities does not include diving operations and working-at-height on cable ships.',
+   containment:'Interim JSA (Job Safety Analysis) prepared for upcoming cable maintenance.',
+   rootCause:'HIRA was scoped to office and land-based activities. Marine/offshore operations not included in initial scope despite being significant OHS exposure.',
+   method:'5-Why',
+   correctiveAction:'Expand HIRA to include marine and offshore operations. Engage specialist OHS consultant for maritime risk assessment. Update emergency response plan to include maritime scenarios.',
+   caOwner:'HR',caDue:'2026-07-15',
+   verification:'',verifier:'',verDate:'',
+   status:'in-progress',notes:''},
+];
+
+// IDs generated by GRCStore
+
+const today = new Date();
+const isOverdue = (item) => item.status !== 'closed' && item.caDue && new Date(item.caDue) < today;
+
+function StatCard({label,val,color,bg}){
+  return <div style={{background:bg||'#fff',borderRadius:8,padding:'14px 16px',textAlign:'center',flex:1}}>
+    <div style={{fontSize:28,fontWeight:800,color:color||'var(--navy)',lineHeight:1}}>{val}</div>
+    <div style={{fontSize:11,color:'var(--gray-600)',marginTop:3}}>{label}</div>
+  </div>;
+}
+
+function SeverityBadge({severity}){
+  const s=SEVERITY[severity]||SEVERITY.ofi;
+  return <span style={{background:s.bg,color:s.color,borderRadius:20,padding:'2px 9px',fontSize:11,fontWeight:700}}>{s.icon} {s.label}</span>;
+}
+function StatusBadge({status,overdue}){
+  const key=overdue?'overdue':status;
+  const s=STATUS[key]||STATUS.open;
+  return <span style={{background:s.bg,color:s.color,borderRadius:20,padding:'2px 9px',fontSize:11,fontWeight:700}}>{s.label}</span>;
+}
+
+function NCRModal({item,isNew,onSave,onClose}){
+  const [f,setF]=useState(item);
+  const set=(k,v)=>setF(p=>({...p,[k]:v}));
+  const Row=({label,children})=><div style={{marginBottom:12}}>
+    <label style={{fontSize:11,fontWeight:700,color:'var(--gray-600)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>{label}</label>
+    {children}
+  </div>;
+  return <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.45)',zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',padding:20}} onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div style={{background:'#fff',borderRadius:12,boxShadow:'0 20px 60px rgba(0,0,0,.2)',width:'100%',maxWidth:680,maxHeight:'92vh',overflowY:'auto'}}>
+      <div style={{padding:'16px 24px',borderBottom:'1px solid var(--gray-200)',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,background:'#fff',zIndex:1}}>
+        <div style={{fontWeight:800,fontSize:16,color:'var(--navy)'}}>{isNew?'Log New NCR / Finding':'Edit NCR / Finding'}</div>
+        <button onClick={onClose} style={{fontSize:22,color:'var(--gray-500)',lineHeight:1}}>×</button>
+      </div>
+      <div style={{padding:'20px 24px'}}>
+        {/* Section: Finding */}
+        <div style={{fontWeight:700,fontSize:13,color:'var(--red)',marginBottom:10,paddingBottom:6,borderBottom:'1px solid var(--gray-200)'}}>📋 Finding Details</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12,marginBottom:12}}>
+          <Row label="Standard"><select value={f.standard} onChange={e=>set('standard',e.target.value)}>
+            {Object.entries(STD_META).map(([k,v])=><option key={k} value={k}>{v.abbr}</option>)}
+          </select></Row>
+          <Row label="Clause / Control Ref"><input value={f.clause} onChange={e=>set('clause',e.target.value)} placeholder="e.g. 6.1.2" /></Row>
+          <Row label="Severity"><select value={f.severity} onChange={e=>set('severity',e.target.value)}>
+            {Object.entries(SEVERITY).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
+          </select></Row>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12,marginBottom:12}}>
+          <Row label="Audit Phase"><select value={f.phase} onChange={e=>set('phase',e.target.value)}>
+            {PHASES.map(p=><option key={p}>{p}</option>)}
+          </select></Row>
+          <Row label="Auditor / Source"><input value={f.auditor} onChange={e=>set('auditor',e.target.value)} /></Row>
+          <Row label="Date Found"><input type="date" value={f.date} onChange={e=>set('date',e.target.value)} /></Row>
+        </div>
+        <Row label="Finding Description"><textarea value={f.finding} onChange={e=>set('finding',e.target.value)} style={{minHeight:70,resize:'vertical'}} placeholder="Describe the nonconformity or observation with objective evidence..." /></Row>
+
+        {/* Section: RCA */}
+        <div style={{fontWeight:700,fontSize:13,color:'#D97706',margin:'16px 0 10px',paddingBottom:6,borderBottom:'1px solid var(--gray-200)'}}>🔍 Root Cause Analysis</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
+          <Row label="Immediate Containment Action"><textarea value={f.containment} onChange={e=>set('containment',e.target.value)} style={{minHeight:60,resize:'vertical'}} placeholder="What was done immediately to contain the impact?" /></Row>
+          <Row label="Root Cause"><textarea value={f.rootCause} onChange={e=>set('rootCause',e.target.value)} style={{minHeight:60,resize:'vertical'}} placeholder="Why did this happen? Use the selected RCA method." /></Row>
+        </div>
+        <Row label="RCA Method"><select value={f.method} onChange={e=>set('method',e.target.value)}>
+          {METHODS.map(m=><option key={m}>{m}</option>)}
+        </select></Row>
+
+        {/* Section: CA */}
+        <div style={{fontWeight:700,fontSize:13,color:'#059669',margin:'16px 0 10px',paddingBottom:6,borderBottom:'1px solid var(--gray-200)'}}>✅ Corrective Action</div>
+        <Row label="Corrective Action Plan"><textarea value={f.correctiveAction} onChange={e=>set('correctiveAction',e.target.value)} style={{minHeight:70,resize:'vertical'}} placeholder="What systemic action will prevent recurrence?" /></Row>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
+          <Row label="CA Owner"><select value={f.caOwner} onChange={e=>set('caOwner',e.target.value)}>
+            {OWNERS.map(o=><option key={o}>{o}</option>)}
+          </select></Row>
+          <Row label="CA Due Date"><input type="date" value={f.caDue} onChange={e=>set('caDue',e.target.value)} /></Row>
+        </div>
+
+        {/* Section: Verification */}
+        <div style={{fontWeight:700,fontSize:13,color:'#7C3AED',margin:'16px 0 10px',paddingBottom:6,borderBottom:'1px solid var(--gray-200)'}}>🔬 Verification of Effectiveness</div>
+        <Row label="Verification Evidence / Notes"><textarea value={f.verification} onChange={e=>set('verification',e.target.value)} style={{minHeight:60,resize:'vertical'}} placeholder="How was the effectiveness of the corrective action verified?" /></Row>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12,marginBottom:12}}>
+          <Row label="Verifier"><input value={f.verifier} onChange={e=>set('verifier',e.target.value)} placeholder="Name / team" /></Row>
+          <Row label="Verification Date"><input type="date" value={f.verDate} onChange={e=>set('verDate',e.target.value)} /></Row>
+          <Row label="Status"><select value={f.status} onChange={e=>set('status',e.target.value)}>
+            {Object.entries(STATUS).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
+          </select></Row>
+        </div>
+        <Row label="Internal Notes"><textarea value={f.notes} onChange={e=>set('notes',e.target.value)} style={{minHeight:50,resize:'vertical'}} /></Row>
+      </div>
+      <div style={{padding:'14px 24px',borderTop:'1px solid var(--gray-200)',display:'flex',justifyContent:'flex-end',gap:10,position:'sticky',bottom:0,background:'#fff'}}>
+        <button onClick={onClose} style={{padding:'8px 18px',borderRadius:7,border:'1px solid var(--gray-300)',color:'var(--gray-700)',fontSize:13,fontWeight:600,cursor:'pointer'}}>Cancel</button>
+        <button onClick={()=>onSave(f)} disabled={!f.finding} style={{padding:'8px 20px',borderRadius:7,background:f.finding?'var(--navy)':'var(--gray-200)',color:f.finding?'#fff':'var(--gray-500)',fontSize:13,fontWeight:700,cursor:f.finding?'pointer':'not-allowed'}}>
+          {isNew?'Log NCR':'Save Changes'}
+        </button>
+      </div>
+    </div>
+  </div>;
+}
+
+function NCRRow({item,onClick}){
+  const std=STD_META[item.standard]||{abbr:'?',color:'#999'};
+  const overdue=isOverdue(item);
+  return <tr onClick={onClick} style={{borderBottom:'1px solid var(--gray-100)',cursor:'pointer',transition:'background .1s'}}
+    onMouseEnter={e=>e.currentTarget.style.background='var(--gray-50)'}
+    onMouseLeave={e=>e.currentTarget.style.background='#fff'}>
+    <td style={{padding:'10px 14px',fontFamily:'var(--mono)',fontSize:11,color:'var(--gray-500)',whiteSpace:'nowrap'}}>{item.id}</td>
+    <td style={{padding:'10px 10px'}}><span style={{background:`${std.color}18`,color:std.color,borderRadius:4,padding:'2px 7px',fontSize:11,fontWeight:700}}>{std.abbr}</span></td>
+    <td style={{padding:'10px 10px',fontFamily:'var(--mono)',fontSize:11,color:'var(--gray-600)'}}>{item.clause}</td>
+    <td style={{padding:'10px 10px',maxWidth:300}}><div style={{fontSize:12,fontWeight:500,color:'var(--gray-900)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.finding}</div></td>
+    <td style={{padding:'10px 10px'}}><SeverityBadge severity={item.severity} /></td>
+    <td style={{padding:'10px 10px',fontSize:11,color:'var(--gray-600)',whiteSpace:'nowrap'}}>{item.phase}</td>
+    <td style={{padding:'10px 10px',fontSize:11,color:'var(--gray-600)'}}>{item.caOwner}</td>
+    <td style={{padding:'10px 10px',fontSize:11,color:overdue?'var(--red)':'var(--gray-600)',fontWeight:overdue?700:400,whiteSpace:'nowrap'}}>
+      {item.caDue?new Date(item.caDue).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'—'}{overdue?' ⚠':''}
+    </td>
+    <td style={{padding:'10px 10px'}}><StatusBadge status={item.status} overdue={overdue} /></td>
+  </tr>;
+}
+
+function App(){
+  const [items,setItems]=useState(()=>GRCStore.getNCRs());
+  const [modal,setModal]=useState(null);
+  const [filterStd,setFilterStd]=useState('');
+  const [filterSev,setFilterSev]=useState('');
+  const [filterStatus,setFilterStatus]=useState('');
+  const [expandedId,setExpandedId]=useState(null);
+
+  useEffect(()=>{ const h=()=>setItems(GRCStore.getNCRs()); GRCStore.on('change',h); return ()=>GRCStore.off('change',h); },[]);
+
+  const filtered=useMemo(()=>items.filter(i=>{
+    if(filterStd&&i.standard!==filterStd)return false;
+    if(filterSev&&i.severity!==filterSev)return false;
+    if(filterStatus&&i.status!==filterStatus)return false;
+    return true;
+  }),[items,filterStd,filterSev,filterStatus]);
+
+  const stats=useMemo(()=>{
+    const s={open:0,'in-progress':0,'pending-verification':0,closed:0,overdue:0,major:0,minor:0};
+    items.forEach(i=>{
+      const ov=isOverdue(i);
+      if(ov)s.overdue++;else s[i.status]=(s[i.status]||0)+1;
+      s[i.severity]=(s[i.severity]||0)+1;
+    });
+    return s;
+  },[items]);
+
+  const save=(form)=>{
+    GRCStore.upsertNCR(modal.isNew?form:{...modal.item,...form});
+    setItems(GRCStore.getNCRs());
+    setModal(null);
+  };
+
+  const blank={standard:'iso27001',clause:'',phase:'Internal Audit',severity:'minor',auditor:'Internal Audit',date:new Date().toISOString().split('T')[0],finding:'',containment:'',rootCause:'',method:'5-Why',correctiveAction:'',caOwner:'Internal Audit',caDue:'',verification:'',verifier:'',verDate:'',status:'open',notes:''};
+
+  return <div style={{minHeight:'100vh',background:'var(--gray-50)'}}>
+    {/* Notion-Style Header */}
+    <div style={{background:'#fff', borderBottom:'1px solid var(--gray-200)', padding:'24px 28px'}}>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:24}}>
+        <div>
+          <div style={{display:'flex', alignItems:'center', gap:8, color:'var(--gray-500)', fontSize:12, marginBottom:4}}>
+            <span>ISO Certification 2026</span>
+            <span>/</span>
+            <span style={{fontWeight:600, color:'var(--gray-900)'}}>NCR Tracker</span>
+          </div>
+          <div style={{fontSize:24, fontWeight:800, color:'var(--gray-900)', letterSpacing:'-0.5px'}}>Non-Conformity (NCR) Tracker</div>
+          <div style={{fontSize:13, color:'var(--gray-500)', marginTop:4}}>Central Audit Findings & Corrective Action Oversight</div>
+        </div>
+        <div style={{display:'flex', gap:10}}>
+          <button onClick={()=>setModal({item:blank,isNew:true})} style={{padding:'8px 20px', borderRadius:'var(--radius-pill)', background:'var(--navy)', color:'#fff', fontWeight:700, fontSize:13, border:'none', boxShadow:'var(--shadow-sm)'}}>+ Log NCR</button>
+          <a href="Dashboard.html" style={{padding:'8px 16px', borderRadius:6, border:'1px solid var(--gray-200)', color:'var(--gray-700)', textDecoration:'none', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', gap:6}}>
+            <span>←</span> Dashboard
+          </a>
+        </div>
+      </div>
+
+      {/* Bento Highlights */}
+      <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(140px, 1fr))', gap:16, marginBottom:8}}>
+        {[
+          { label: 'Total NCRs', value: items.length, color: 'var(--gray-900)', sub: 'All findings' },
+          { label: 'Major NCs', value: stats.major, color: '#E2001A', sub: 'Critical gaps' },
+          { label: 'Minor NCs', value: stats.minor, color: '#D97706', sub: 'Process gaps' },
+          { label: 'Overdue', value: stats.overdue, color: '#9A3412', sub: 'Deadline missed' },
+          { label: 'Open', value: stats.open, color: '#DC2626', sub: 'Awaiting action' },
+          { label: 'Closed', value: stats.closed, color: '#059669', sub: 'Resolved & verified' },
+        ].map(kpi => (
+          <div key={kpi.label} style={{
+            background: '#fff', border: '1px solid var(--gray-200)', borderRadius: 'var(--radius-lg)',
+            padding: '16px 20px', transition: 'all 0.2s',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = '#d4d4d4'; e.currentTarget.style.background = '#f9fafb'; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--gray-200)'; e.currentTarget.style.background = '#fff'; }}
+          >
+            <div style={{fontSize:10, fontWeight:700, color:'var(--gray-500)', textTransform:'uppercase', letterSpacing:0.8, marginBottom:8}}>{kpi.label}</div>
+            <div style={{fontSize:28, fontWeight:800, color:kpi.color, lineHeight:1, letterSpacing:'-1px'}}>{kpi.value}</div>
+            <div style={{fontSize:11, color:'var(--gray-500)', marginTop:6, fontWeight:500}}>{kpi.sub}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* Filters */}
+    <div style={{background:'#fff',borderBottom:'1px solid var(--gray-200)',padding:'10px 28px',display:'flex',gap:10,alignItems:'center',flexWrap:'wrap'}}>
+      <select value={filterStd} onChange={e=>setFilterStd(e.target.value)} style={{width:'auto',padding:'6px 10px',fontSize:12}}>
+        <option value="">All Standards</option>
+        {Object.entries(STD_META).map(([k,v])=><option key={k} value={k}>{v.abbr}</option>)}
+      </select>
+      <select value={filterSev} onChange={e=>setFilterSev(e.target.value)} style={{width:'auto',padding:'6px 10px',fontSize:12}}>
+        <option value="">All Severities</option>
+        {Object.entries(SEVERITY).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
+      </select>
+      <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)} style={{width:'auto',padding:'6px 10px',fontSize:12}}>
+        <option value="">All Statuses</option>
+        {Object.entries(STATUS).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
+      </select>
+      {(filterStd||filterSev||filterStatus)&&<button onClick={()=>{setFilterStd('');setFilterSev('');setFilterStatus('');}} style={{fontSize:12,color:'var(--red)',fontWeight:600,padding:'4px 8px',cursor:'pointer'}}>Clear ×</button>}
+      <span style={{marginLeft:'auto',fontSize:12,color:'var(--gray-500)'}}>{filtered.length} of {items.length} NCRs · Click row to expand / edit</span>
+    </div>
+
+    {/* Table */}
+    <div style={{padding:'20px 28px'}}>
+      <div style={{background:'#fff',borderRadius:'var(--radius)',boxShadow:'var(--shadow)',overflow:'hidden'}}>
+        <table style={{width:'100%',borderCollapse:'collapse'}}>
+          <thead>
+            <tr style={{background:'var(--gray-50)',borderBottom:'2px solid var(--gray-200)'}}>
+              {['ID','Standard','Clause','Finding (summary)','Severity','Phase','CA Owner','Due','Status'].map(h=>
+                <th key={h} style={{textAlign:'left',padding:'10px 10px',fontSize:11,fontWeight:700,color:'var(--gray-500)',textTransform:'uppercase',letterSpacing:.4,whiteSpace:'nowrap'}}>{h}</th>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length===0&&<tr><td colSpan={9} style={{padding:40,textAlign:'center',color:'var(--gray-500)'}}>No NCRs match your filters.</td></tr>}
+            {filtered.map(item=>[
+              <NCRRow key={item.id} item={item} onClick={()=>setExpandedId(expandedId===item.id?null:item.id)} />,
+              expandedId===item.id&&<tr key={`${item.id}-exp`} style={{background:'#F8FAFF',borderBottom:'2px solid var(--gray-200)'}}>
+                <td colSpan={9} style={{padding:'16px 28px'}}>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:16,marginBottom:12}}>
+                    {[
+                      {label:'Finding',val:item.finding},
+                      {label:'Root Cause',val:item.rootCause||'—'},
+                      {label:'Corrective Action',val:item.correctiveAction||'—'},
+                    ].map(f=><div key={f.label}>
+                      <div style={{fontSize:10,fontWeight:700,color:'var(--gray-500)',textTransform:'uppercase',marginBottom:4}}>{f.label}</div>
+                      <div style={{fontSize:12,color:'var(--gray-800)',lineHeight:1.5}}>{f.val}</div>
+                    </div>)}
+                  </div>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+                    {[
+                      {label:'Containment Action',val:item.containment||'—'},
+                      {label:'Verification Evidence',val:item.verification||'Not yet verified'},
+                    ].map(f=><div key={f.label}>
+                      <div style={{fontSize:10,fontWeight:700,color:'var(--gray-500)',textTransform:'uppercase',marginBottom:4}}>{f.label}</div>
+                      <div style={{fontSize:12,color:'var(--gray-800)',lineHeight:1.5}}>{f.val}</div>
+                    </div>)}
+                  </div>
+                  {item.notes&&<div style={{marginTop:10,fontSize:12,color:'var(--gray-600)',fontStyle:'italic'}}>📌 {item.notes}</div>}
+                  <div style={{marginTop:12,display:'flex',gap:8}}>
+                    <button onClick={()=>setModal({item,isNew:false})} style={{padding:'6px 14px',borderRadius:6,border:'1px solid #BFDBFE',color:'#1D4ED8',fontSize:12,fontWeight:600,cursor:'pointer',background:'#EFF6FF'}}>Edit NCR</button>
+                    <button onClick={()=>{if(confirm('Delete this NCR?')){GRCStore.deleteNCR(item.id);setItems(GRCStore.getNCRs());setExpandedId(null);}}} style={{padding:'6px 14px',borderRadius:6,border:'1px solid #FECDCD',color:'var(--red)',fontSize:12,fontWeight:600,cursor:'pointer',background:'#FFF1F2'}}>Delete</button>
+                    {item.status!=='closed'&&<button onClick={()=>{GRCStore.upsertNCR({...item,status:'closed',verDate:new Date().toISOString().split('T')[0]});setItems(GRCStore.getNCRs());}} style={{padding:'6px 14px',borderRadius:6,border:'1px solid #86EFAC',color:'#16A34A',fontSize:12,fontWeight:600,cursor:'pointer',background:'#DCFCE7'}}>Mark Closed ✓</button>}
+                  </div>
+                </td>
+              </tr>
+            ])}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {/* Footer */}
+    <div style={{padding:'12px 28px',borderTop:'1px solid var(--gray-200)',display:'flex',gap:16}}>
+      <a href="Dashboard.html" style={{fontSize:12,color:'var(--gray-600)',textDecoration:'none',fontWeight:500}}>← Dashboard</a>
+      <a href="Risk Register.html" style={{fontSize:12,color:'#2563EB',textDecoration:'none',fontWeight:500}}>Risk Register →</a>
+      <button onClick={()=>{if(confirm('Reset ALL GRC data?')){GRCStore.reset();setItems(GRCStore.getNCRs());}}} style={{marginLeft:'auto',fontSize:12,color:'var(--gray-500)',padding:'4px 10px',borderRadius:5,border:'1px solid var(--gray-300)',cursor:'pointer'}}>Reset Store</button>
+    </div>
+
+    {modal&&<NCRModal item={modal.item} isNew={modal.isNew} onSave={save} onClose={()=>setModal(null)} />}
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script></body></html>

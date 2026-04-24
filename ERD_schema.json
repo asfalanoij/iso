@@ -1,0 +1,25 @@
+{
+  "entities": [
+    {"id": "STD", "label": "standards", "type": "REF", "fields": ["id PK", "code", "abbr", "certType", "color"]},
+    {"id": "JUR", "label": "jurisdictions", "type": "REF", "fields": ["id PK", "code", "label", "flag"]},
+    {"id": "MIL", "label": "milestones", "type": "MASTER", "fields": ["id PK", "standardId FK", "name", "phase", "startWeek", "status"]},
+    {"id": "DOC", "label": "documents", "type": "MASTER", "fields": ["id PK", "standardId FK", "name", "status"]},
+    {"id": "EV", "label": "evidence", "type": "OPS", "fields": ["id PK", "standardIds[] FK", "clauseRefs[]", "type", "status", "owner"]},
+    {"id": "RISK", "label": "risks", "type": "OPS", "fields": ["id PK", "standardIds[] FK", "ncrIds[] FK", "likelihood", "impact", "treatment"]},
+    {"id": "NCR", "label": "ncrs", "type": "OPS", "fields": ["id PK", "standardId FK", "riskIds[] FK", "evidenceIds[] FK", "severity", "status"]},
+    {"id": "LR", "label": "legalReqs", "type": "OPS", "fields": ["id PK", "jurisdiction FK", "standardIds[] FK", "type", "priority", "status"]},
+    {"id": "CR", "label": "checklistResp", "type": "OPS", "fields": ["id PK", "standardId FK", "clauseRef", "finding", "evidenceSampled"]}
+  ],
+  "relationships": [
+    {"from": "MIL", "to": "STD", "label": "M:1", "cascade": "CASCADE"},
+    {"from": "DOC", "to": "STD", "label": "M:1", "cascade": "CASCADE"},
+    {"from": "EV", "to": "STD", "label": "M:M (standardIds[])", "cascade": "SET NULL"},
+    {"from": "RISK", "to": "STD", "label": "M:M (standardIds[])", "cascade": "SET NULL"},
+    {"from": "NCR", "to": "STD", "label": "M:1 (standardId)", "cascade": "CASCADE"},
+    {"from": "NCR", "to": "RISK", "label": "M:M (riskIds[] ↔ ncrIds[])", "cascade": "NULLIFY"},
+    {"from": "NCR", "to": "EV", "label": "M:M (evidenceIds[])", "cascade": "NULLIFY"},
+    {"from": "LR", "to": "JUR", "label": "M:1 (jurisdiction)", "cascade": "RESTRICT"},
+    {"from": "LR", "to": "STD", "label": "M:M (standardIds[])", "cascade": "SET NULL"},
+    {"from": "CR", "to": "STD", "label": "M:1 (standardId)", "cascade": "CASCADE"}
+  ]
+}

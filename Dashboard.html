@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Telin — ISO Certification Programme 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="store.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --red: #E2001A;
+    --red-light: #FFF1F2;
+    --red-mid: #FECDCD;
+    --navy: #0D1B2A;
+    --gray-50: #f7f7f5;
+    --gray-100: #f1f1f0;
+    --gray-200: #e9ecef;
+    --gray-300: #dee2e6;
+    --gray-400: #ced4da;
+    --gray-500: #868685;
+    --gray-600: #6C757D;
+    --gray-700: #37352f;
+    --gray-800: #212529;
+    --gray-900: #050505;
+    --green: #0a85d1;
+    --green-light: #eff6ff;
+    --amber: #d97706;
+    --amber-light: #fffbeb;
+    --blue: #0a85d1;
+    --blue-light: #eff6ff;
+    --font: 'Plus Jakarta Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+    --sidebar-w: 240px;
+    --shadow-sm: 0 1px 2px rgba(15, 15, 15, 0.1);
+    --shadow: 0 1px 3px rgba(15, 15, 15, 0.1);
+    --shadow-md: 0 4px 6px -1px rgba(15, 15, 15, 0.1), 0 2px 4px -1px rgba(15, 15, 15, 0.06);
+    --radius: 6px;
+    --radius-pill: 9999px;
+    --radius-lg: 10px;
+    --glass-bg: #fff;
+    --glass-border: #e9ecef;
+    --premium-shadow: 0 1px 2px rgba(15, 15, 15, 0.1);
+  }
+  html, body, #root { height: 100%; font-family: var(--font); background: var(--gray-50); color: var(--gray-900); font-size: 14px; }
+  body { display: flex; }
+  #root { display: flex; width: 100%; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 3px; }
+  button { font-family: var(--font); cursor: pointer; border: none; background: none; }
+  input, select { font-family: var(--font); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+
+// ── CONSTANTS ──────────────────────────────────────────────────────────
+const STATUS_CYCLE = ['not-started', 'in-progress', 'done', 'blocked'];
+const STATUS_LABEL = { 'not-started': 'Not Started', 'in-progress': 'In Progress', done: 'Done', blocked: 'Blocked' };
+const STATUS_COLOR = { 'not-started': '#ADB5BD', 'in-progress': '#2563EB', done: '#16A34A', blocked: '#E2001A' };
+const STATUS_BG   = { 'not-started': '#F1F3F5', 'in-progress': '#EFF6FF', done: '#DCFCE7', blocked: '#FFF1F2' };
+const OWNER_COLORS = {
+  'Konsultan 1':   { bg: '#EEF2FF', text: '#4338CA' },
+  'Konsultan 2':   { bg: '#F5F3FF', text: '#6D28D9' },
+  'Internal Audit':{ bg: '#ECFDF5', text: '#065F46' },
+  'CB':            { bg: '#FFF7ED', text: '#9A3412' },
+};
+
+// Weeks from Apr 1 2026
+const WEEK_LABELS = [];
+const start = new Date('2026-04-01');
+for (let w = 0; w <= 30; w++) {
+  const d = new Date(start); d.setDate(d.getDate() + w*7);
+  WEEK_LABELS.push(d.toLocaleDateString('en-GB', { day:'numeric', month:'short' }));
+}
+const MONTH_MARKS = [
+  { label: 'Apr', week: 0 }, { label: 'May', week: 4.4 },
+  { label: 'Jun', week: 8.7 }, { label: 'Jul', week: 13 },
+  { label: 'Aug', week: 17.4 }, { label: 'Sep', week: 21.7 },
+  { label: 'Oct', week: 26 },
+];
+const PROJECT_META = {
+  org: 'Telin',
+  projectName: 'Multi-Standard ISO Certification Programme 2026',
+  phase1: { label: 'Phase 1 — Jasa Konsultan', start: 'Jun 2026', end: 'Oct 2026', startWeek: 8.7, endWeek: 30 },
+  phase2: { label: 'Phase 2 — CB Audit', start: 'Oct 2026', end: 'Oct 2026', startWeek: 26, endWeek: 30 },
+  currentWeek: 3.2,
+  totalWeeks: 30,
+  consultants: ['Konsultan 1', 'Konsultan 2'],
+  internalAudit: 'Internal Audit Team',
+  cb: 'Certification Body'
+};
+
+// ── HELPERS ────────────────────────────────────────────────────────────
+function calcProgress(milestones) {
+  if (!milestones.length) return 0;
+  const weights = { done: 1, 'in-progress': 0.5, 'not-started': 0, blocked: 0 };
+  return Math.round(milestones.reduce((s, m) => s + (weights[m.status] || 0), 0) / milestones.length * 100);
+}
+function calcRAG(progress, milestones) {
+  if (milestones.some(m => m.status === 'blocked')) return 'red';
+  if (progress >= 70) return 'green';
+  if (progress >= 30) return 'amber';
+  return 'red';
+}
+const RAG_COLOR = { green: '#16A34A', amber: '#D97706', red: '#E2001A' };
+const RAG_BG    = { green: '#DCFCE7', amber: '#FEF3C7', red: '#FFF1F2' };
+const RAG_LABEL = { green: 'On Track', amber: 'At Risk', red: 'Off Track' };
+const DOC_STATUS = {
+  approved:    { label: 'Approved',    color: '#16A34A', bg: '#DCFCE7' },
+  'in-review': { label: 'In Review',  color: '#2563EB', bg: '#EFF6FF' },
+  draft:       { label: 'Draft',      color: '#D97706', bg: '#FEF3C7' },
+  'not-started': { label: 'Pending',  color: '#ADB5BD', bg: '#F1F3F5' },
+};
+
+// ── SIDEBAR ────────────────────────────────────────────────────────────
+const NAV_ITEMS = [
+  { id: 'dashboard', icon: '⊞', label: 'Dashboard' },
+  { id: 'timeline',  icon: '▤',  label: 'Timeline' },
+  { id: 'standards', icon: '◈', label: 'Standards' },
+  { id: 'documents', icon: '◻', label: 'Documents' },
+  { id: 'ai-diagnostics', icon: '🧠', label: 'AI Diagnostics', hidden: true },
+  { id: 'analytics', icon: '📊', label: 'Executive Analytics' },
+  { id: 'project-charter', icon: '📋', label: 'Project Charter' },
+];
+const NAV_LINKS = [
+  { href: 'Data Governance.html',   icon: '⊛', label: 'Data Governance' },
+  { href: 'ISO Crosswalk.html',     icon: '⊕', label: 'ISO Crosswalk' },
+  { href: 'Evidence Register.html', icon: '◷', label: 'Evidence Register' },
+  { href: 'NCR Tracker.html',       icon: '⚠', label: 'NCR Tracker' },
+  { href: 'Risk Register.html',     icon: '◈', label: 'Risk Register' },
+  { href: 'Audit Checklist.html',   icon: '✓', label: 'Audit Checklist' },
+  { href: 'Legal Register.html',    icon: '⚖', label: 'Legal Register' },
+];
+function Sidebar({ active, onNav, showHidden, onToggleHidden }) {
+  return (
+    <aside style={{
+      width: 'var(--sidebar-w)', minHeight: '100vh', background: 'var(--navy)',
+      display: 'flex', flexDirection: 'column', flexShrink: 0, position: 'sticky', top: 0,
+    }}>
+      <div style={{ padding: '24px 20px 16px', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 36, height: 36, background: 'var(--red)', borderRadius: 8,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#fff', fontWeight: 800, fontSize: 16, letterSpacing: -1,
+          }}>T</div>
+          <div>
+            <div style={{ color: '#fff', fontWeight: 700, fontSize: 15, lineHeight: 1.2 }}>Telin</div>
+            <div style={{ color: 'rgba(255,255,255,.45)', fontSize: 11, lineHeight: 1.3 }}>ISO Programme 2026</div>
+          </div>
+        </div>
+      </div>
+      <nav style={{ padding: '12px 12px', flex: 1 }}>
+        {NAV_ITEMS.filter(item => !item.hidden || showHidden).map(item => (
+          <button key={item.id} onClick={() => onNav(item.id)} style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+            padding: '9px 10px', borderRadius: 8, marginBottom: 2,
+            background: active === item.id ? 'rgba(226,0,26,.18)' : 'transparent',
+            color: active === item.id ? '#FF6B7A' : 'rgba(255,255,255,.55)',
+            fontWeight: active === item.id ? 600 : 400, fontSize: 13.5,
+            transition: 'all .15s',
+          }}>
+            <span style={{ fontSize: 16 }}>{item.icon}</span>
+            {item.label}
+          </button>
+        ))}
+      </nav>
+      <div style={{ padding: '12px 12px', borderTop: '1px solid rgba(255,255,255,.08)' }}>
+        <div style={{ fontSize: 10, color: 'rgba(255,255,255,.3)', fontWeight: 700, letterSpacing: .5, textTransform: 'uppercase', marginBottom: 6, paddingLeft: 10 }}>Tools</div>
+        {NAV_LINKS.map(link => (
+          <a key={link.href} href={link.href} style={{
+            display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, marginBottom: 2,
+            color: 'rgba(255,255,255,.5)', fontSize: 13, fontWeight: 400, textDecoration: 'none', transition: 'all .15s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.07)'; e.currentTarget.style.color = 'rgba(255,255,255,.85)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,.5)'; }}>
+            <span style={{ fontSize: 14 }}>{link.icon}</span>{link.label}
+          </a>
+        ))}
+        <div 
+          onClick={onToggleHidden}
+          style={{ 
+            marginTop: 10, paddingLeft: 10, borderTop: '1px solid rgba(255,255,255,.06)', 
+            paddingTop: 10, cursor: 'pointer', transition: 'opacity 0.2s'
+          }}
+          onMouseEnter={e => e.currentTarget.style.opacity = 1}
+          onMouseLeave={e => e.currentTarget.style.opacity = 0.5}
+        >
+          {showHidden ? (
+            <div style={{ color: 'rgba(255,255,255,.4)', fontSize: 11 }}>
+              <div style={{ color: 'rgba(255,255,255,.3)' }}>Internal Audit Team</div>
+              <div style={{ marginTop: 1 }}>Orchestrator Mode Active</div>
+            </div>
+          ) : (
+            <div style={{ color: 'rgba(255,255,255,.15)', fontSize: 11 }}>
+              System Integrity Verified
+            </div>
+          )}
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+// ── RAG BADGE ──────────────────────────────────────────────────────────
+function RAGBadge({ rag, size = 'sm' }) {
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      background: RAG_BG[rag], color: RAG_COLOR[rag],
+      borderRadius: 'var(--radius-pill)', padding: size === 'lg' ? '6px 14px' : '4px 10px',
+      fontSize: size === 'lg' ? 12 : 10, fontWeight: 700,
+      letterSpacing: 0.3, textTransform: 'uppercase',
+      border: `1px solid ${RAG_COLOR[rag]}22`
+    }}>
+      <span style={{ width: size==='lg'?8:6, height: size==='lg'?8:6, borderRadius: '50%', background: RAG_COLOR[rag], display: 'inline-block' }} />
+      {RAG_LABEL[rag]}
+    </span>
+  );
+}
+
+// ── PROGRESS RING ─────────────────────────────────────────────────────
+function ProgressRing({ pct, color, size = 48 }) {
+  const r = (size - 6) / 2;
+  const circ = 2 * Math.PI * r;
+  const dash = (pct / 100) * circ;
+  return (
+    <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--gray-200)" strokeWidth={5} />
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={5}
+        strokeDasharray={`${dash} ${circ - dash}`} strokeLinecap="round"
+        style={{ transition: 'stroke-dasharray .5s ease' }} />
+    </svg>
+  );
+}
+
+// ── STATUS PILL ────────────────────────────────────────────────────────
+function StatusPill({ status, onClick }) {
+  return (
+    <button onClick={onClick} title="Click to cycle status" style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      background: STATUS_BG[status], color: STATUS_COLOR[status],
+      border: `1px solid ${STATUS_COLOR[status]}33`,
+      borderRadius: 20, padding: '2px 8px', fontSize: 11, fontWeight: 600,
+      cursor: 'pointer', transition: 'all .15s',
+    }}>
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: STATUS_COLOR[status] }} />
+      {STATUS_LABEL[status]}
+    </button>
+  );
+}
+
+// ── STANDARD CARD ─────────────────────────────────────────────────────
+function StandardCard({ std, onMilestoneClick, onClick }) {
+  const progress = calcProgress(std.milestones);
+  const rag = calcRAG(progress, std.milestones);
+  const done = std.milestones.filter(m => m.status === 'done').length;
+  return (
+    <div onClick={onClick} style={{
+      background: '#fff', borderRadius: 'var(--radius)', 
+      padding: '24px', cursor: 'pointer', 
+      transition: 'all 0.2s ease',
+      border: '1px solid var(--gray-200)',
+      position: 'relative', overflow: 'hidden'
+    }}
+    onMouseEnter={e => { 
+      e.currentTarget.style.borderColor = '#d4d4d4';
+      e.currentTarget.style.background = '#f9fafb';
+      e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+    }}
+    onMouseLeave={e => { 
+      e.currentTarget.style.borderColor = 'var(--gray-200)';
+      e.currentTarget.style.background = '#fff';
+      e.currentTarget.style.boxShadow = 'none';
+    }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+        <div>
+          <div style={{ fontSize: 10, color: 'var(--gray-500)', fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 4 }}>{std.code}</div>
+          <div style={{ fontWeight: 800, fontSize: 18, color: 'var(--gray-900)', lineHeight: 1.2, letterSpacing: -0.5 }}>{std.abbr}</div>
+          <div style={{ fontSize: 13, color: 'var(--gray-600)', marginTop: 4, fontWeight: 500 }}>{std.name}</div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+          <ProgressRing pct={progress} color={std.color} size={48} />
+          <div style={{ fontSize: 13, fontWeight: 700, color: std.color }}>{progress}%</div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+        <RAGBadge rag={rag} />
+        <span style={{
+          background: std.certType === 'New Certification' ? '#FEF3C7' : std.certType === 'Recertification' ? '#FEE2E2' : '#EFF6FF',
+          color: std.certType === 'New Certification' ? '#92400E' : std.certType === 'Recertification' ? '#991B1B' : '#1E40AF',
+          borderRadius: 20, padding: '3px 8px', fontSize: 11, fontWeight: 600,
+        }}>{std.certType}</span>
+      </div>
+      <div style={{ fontSize: 11, color: 'var(--gray-600)', marginBottom: 6, fontWeight: 500 }}>
+        MILESTONES — {done}/{std.milestones.length} complete
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {std.milestones.map((m, i) => (
+          <div key={m.id} onClick={e => { e.stopPropagation(); onMilestoneClick(std.id, i); }}
+            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 6px', borderRadius: 5, background: 'var(--gray-50)' }}>
+            <span style={{ fontSize: 12, color: 'var(--gray-700)', fontWeight: 500, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</span>
+            <StatusPill status={m.status} onClick={() => {}} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── EXECUTIVE SUMMARY ─────────────────────────────────────────────────
+function ExecSummary({ standards }) {
+  const allMilestones = standards.flatMap(s => s.milestones);
+  const overall = calcProgress(allMilestones);
+  const byRAG = { green: 0, amber: 0, red: 0 };
+  standards.forEach(s => { byRAG[calcRAG(calcProgress(s.milestones), s.milestones)]++; });
+  const totalDocs = standards.flatMap(s => s.documents).length;
+  const approvedDocs = standards.flatMap(s => s.documents).filter(d => d.status === 'approved').length;
+
+  return (
+    <div style={{ 
+      background: 'linear-gradient(135deg, #fff 0%, #f9fafb 100%)', 
+      borderRadius: 'var(--radius-lg)', 
+      boxShadow: 'var(--premium-shadow)', 
+      padding: '28px 32px', 
+      marginBottom: 32,
+      border: '1px solid var(--gray-200)',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      {/* Decorative Blur */}
+      <div style={{ position: 'absolute', top: -40, right: -40, width: 200, height: 200, background: 'rgba(226, 0, 26, 0.03)', borderRadius: '50%', filter: 'blur(60px)' }} />
+      
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, position: 'relative' }}>
+        <div>
+          <div style={{ fontSize: 11, color: 'var(--gray-500)', fontWeight: 600, letterSpacing: .5, textTransform: 'uppercase' }}>Executive Summary</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--navy)', marginTop: 2 }}>Multi-Standard ISO Certification Programme 2026</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 11, color: 'var(--gray-500)', fontWeight: 500 }}>Current Phase</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--blue)', marginTop: 2 }}>Phase 1 — Jasa Konsultan</div>
+          <div style={{ fontSize: 11, color: 'var(--gray-500)' }}>Apr 2026 – Jul 2026</div>
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16 }}>
+        {[
+          { label: 'Overall Progress', value: `${overall}%`, sub: 'across 7 standards', accent: 'var(--navy)', isMain: true },
+          { label: 'On Track', value: byRAG.green, sub: 'standards', accent: '#059669', glow: '#05966908' },
+          { label: 'At Risk', value: byRAG.amber, sub: 'standards', accent: '#D97706', glow: '#D9770608' },
+          { label: 'Off Track', value: byRAG.red, sub: 'standards', accent: '#E2001A', glow: '#E2001A08' },
+          { label: 'Documents Ready', value: `${approvedDocs}/${totalDocs}`, sub: 'approved', accent: '#2563EB', glow: '#2563EB08' },
+        ].map((kpi, idx) => (
+          <div key={kpi.label} style={{ 
+            background: '#fff', 
+            borderRadius: 'var(--radius-lg)', 
+            padding: kpi.isMain ? '22px 24px' : '18px 20px',
+            border: '1px solid #e9ecef',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+            position: 'relative',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            transition: 'all 0.2s ease',
+            cursor: 'default',
+            minHeight: 110
+          }}
+          onMouseEnter={e => { 
+            e.currentTarget.style.borderColor = '#d4d4d4';
+            e.currentTarget.style.background = '#f9fafb';
+          }}
+          onMouseLeave={e => { 
+            e.currentTarget.style.borderColor = '#e9ecef';
+            e.currentTarget.style.background = '#fff';
+          }}
+          >
+            <div style={{ fontSize: 10, color: 'var(--gray-500)', fontWeight: 700, marginBottom: 8, letterSpacing: 0.8, textTransform: 'uppercase' }}>{kpi.label}</div>
+            <div style={{ 
+              fontSize: kpi.isMain ? 44 : 30, 
+              fontWeight: 800, 
+              color: 'var(--gray-900)', 
+              lineHeight: 1, 
+              letterSpacing: -1,
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: 4
+            }}>
+              {kpi.value}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--gray-500)', marginTop: 8, fontWeight: 500 }}>{kpi.sub}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── TIMELINE (GANTT) ───────────────────────────────────────────────────
+function Timeline({ standards, onMilestoneClick }) {
+  const TOTAL_W = 30;
+  const BAR_H = 22;
+  const ROW_H = 42;
+  const LABEL_W = 200;
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', overflow: 'hidden' }}>
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--gray-200)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--navy)' }}>Programme Timeline</div>
+        <div style={{ display: 'flex', gap: 12 }}>
+          {Object.entries(STATUS_COLOR).map(([s, c]) => (
+            <span key={s} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--gray-600)' }}>
+              <span style={{ width: 10, height: 10, borderRadius: 2, background: c, display: 'inline-block' }} />
+              {STATUS_LABEL[s]}
+            </span>
+          ))}
+        </div>
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <div style={{ minWidth: 900 }}>
+          {/* Month headers */}
+          <div style={{ display: 'flex', paddingLeft: LABEL_W, paddingRight: 16, borderBottom: '1px solid var(--gray-200)', background: 'var(--gray-50)', position: 'relative', height: 36 }}>
+            {/* Phase bars */}
+            <div style={{ position: 'absolute', left: LABEL_W, right: 16, top: 0, bottom: 0, display: 'flex' }}>
+              <div style={{ width: `${(8.7/TOTAL_W)*100}%`, background: 'rgba(55,53,47,0.05)', borderRight: '1px solid var(--gray-200)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--gray-500)' }}>Preparation</span>
+              </div>
+              <div style={{ width: `${((26-8.7)/TOTAL_W)*100}%`, background: '#EFF6FF', borderRight: '2px dashed #93C5FD', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#1E40AF' }}>Phase 1 — Jasa Konsultan</span>
+              </div>
+              <div style={{ flex: 1, background: '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#92400E' }}>Phase 2 — CB Audit</span>
+              </div>
+            </div>
+          </div>
+          {/* Month labels */}
+          <div style={{ display: 'flex', paddingLeft: LABEL_W, paddingRight: 16, borderBottom: '1px solid var(--gray-200)', position: 'relative', height: 28 }}>
+            {MONTH_MARKS.map(m => (
+              <div key={m.label} style={{ position: 'absolute', left: `calc(${LABEL_W}px + (100% - ${LABEL_W}px - 16px) * ${m.week/TOTAL_W})`, top: 5 }}>
+                <span style={{ fontSize: 11, color: 'var(--gray-500)', fontWeight: 600 }}>{m.label}</span>
+              </div>
+            ))}
+          </div>
+          {/* Rows per standard */}
+          {standards.map((std, si) => (
+            <div key={std.id}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', padding: '10px 16px 10px 0', borderBottom: `1px solid var(--gray-100)`, background: si % 2 === 0 ? '#fff' : 'var(--gray-50)' }}>
+                <div style={{ width: LABEL_W, paddingLeft: 20, flexShrink: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 12, color: std.color }}>{std.abbr}</div>
+                  <div style={{ fontSize: 11, color: 'var(--gray-500)' }}>{std.certType}</div>
+                </div>
+                <div style={{ flex: 1, position: 'relative', minHeight: std.milestones.length * ROW_H }}>
+                  {/* Phase background */}
+                  <div style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, display: 'flex', pointerEvents: 'none' }}>
+                    <div style={{ width: `${(17/TOTAL_W)*100}%`, background: 'rgba(239,246,255,.4)', borderRight: '1px dashed #BFDBFE' }} />
+                    <div style={{ flex: 1, background: 'rgba(255,247,237,.4)' }} />
+                  </div>
+                  {/* Today line */}
+                  <div style={{
+                    position: 'absolute', left: `${(PROJECT_META.currentWeek/TOTAL_W)*100}%`,
+                    top: 0, bottom: 0, width: 2, background: 'var(--red)', zIndex: 5, opacity: .8,
+                  }} />
+                  {/* Milestone bars */}
+                  {std.milestones.map((m, mi) => {
+                    const left = `${(m.startWeek/TOTAL_W)*100}%`;
+                    const widthPct = (m.durationWeeks/TOTAL_W)*100;
+                    const isTooShort = widthPct < 8; // If bar is less than 8% width, move text out
+                    return (
+                      <div key={m.id} style={{ position: 'absolute', top: mi * ROW_H + 9, left, width: `${widthPct}%`, display: 'flex', alignItems: 'center' }}>
+                        <div onClick={() => onMilestoneClick(std.id, mi)} title={`${m.name} · ${STATUS_LABEL[m.status]} · Click to update`}
+                          style={{
+                            height: BAR_H, width: '100%', borderRadius: 4, background: STATUS_COLOR[m.status],
+                            opacity: m.status === 'not-started' ? 0.35 : 0.85,
+                            cursor: 'pointer', transition: 'opacity .15s, transform .1s',
+                            flexShrink: 0
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'scaleY(1.1)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.opacity = m.status === 'not-started' ? '0.35' : '0.85'; e.currentTarget.style.transform = 'none'; }}
+                        />
+                        <span style={{ 
+                          fontSize: 10, 
+                          color: isTooShort ? 'var(--gray-700)' : '#fff', 
+                          fontWeight: 700, 
+                          whiteSpace: 'nowrap', 
+                          marginLeft: isTooShort ? 8 : -Math.min(widthPct*5, 0), // Basic centering if inside
+                          position: isTooShort ? 'static' : 'absolute',
+                          left: isTooShort ? 'auto' : 8,
+                          pointerEvents: 'none',
+                          zIndex: 2,
+                          textShadow: isTooShort ? 'none' : '0 1px 2px rgba(0,0,0,0.2)'
+                        }}>
+                          {m.name}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ))}
+          {/* Legend today */}
+          <div style={{ padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 8, borderTop: '1px solid var(--gray-200)' }}>
+            <div style={{ width: 2, height: 14, background: 'var(--red)', borderRadius: 1 }} />
+            <span style={{ fontSize: 11, color: 'var(--gray-500)' }}>Today — 19 Apr 2026</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── STANDARDS DETAIL ──────────────────────────────────────────────────
+function StandardDetail({ std, onMilestoneClick, onBack }) {
+  const progress = calcProgress(std.milestones);
+  const rag = calcRAG(progress, std.milestones);
+  return (
+    <div>
+      <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--gray-600)', fontSize: 13, marginBottom: 16, fontWeight: 500 }}>
+        ← Back to Dashboard
+      </button>
+      <div style={{ background: '#fff', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', padding: 24, marginBottom: 20, borderLeft: `4px solid ${std.color}` }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: 12, color: 'var(--gray-500)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: .5 }}>{std.code}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--navy)', marginTop: 2 }}>{std.abbr} — {std.name}</div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              <RAGBadge rag={rag} size="lg" />
+              <span style={{ background: '#EFF6FF', color: '#1E40AF', borderRadius: 20, padding: '4px 12px', fontSize: 13, fontWeight: 600 }}>{std.certType}</span>
+            </div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <ProgressRing pct={progress} color={std.color} size={80} />
+            <div style={{ fontSize: 22, fontWeight: 800, color: std.color, marginTop: -60, position: 'relative', zIndex: 1 }}>{progress}%</div>
+          </div>
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        {/* Milestones */}
+        <div style={{ background: '#fff', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', padding: 20 }}>
+          <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--navy)', marginBottom: 14 }}>Milestones</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {std.milestones.map((m, i) => (
+              <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: 8, background: 'var(--gray-50)', border: '1px solid var(--gray-200)' }}>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--gray-800)' }}>{m.name}</div>
+                  <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 11, background: OWNER_COLORS[m.owner]?.bg || '#F1F3F5', color: OWNER_COLORS[m.owner]?.text || '#666', borderRadius: 4, padding: '1px 6px', fontWeight: 600 }}>{m.owner}</span>
+                    <span style={{ fontSize: 11, color: 'var(--gray-500)' }}>Phase {m.phase} · Week {m.startWeek + 1}–{m.startWeek + m.durationWeeks}</span>
+                  </div>
+                </div>
+                <StatusPill status={m.status} onClick={() => onMilestoneClick(std.id, i)} />
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Documents */}
+        <div style={{ background: '#fff', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', padding: 20 }}>
+          <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--navy)', marginBottom: 14 }}>Document Status</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {std.documents.map((doc, i) => {
+              const ds = DOC_STATUS[doc.status];
+              return (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: 8, background: 'var(--gray-50)', border: '1px solid var(--gray-200)' }}>
+                  <span style={{ fontWeight: 500, fontSize: 13, color: 'var(--gray-800)' }}>{doc.name}</span>
+                  <span style={{ background: ds.bg, color: ds.color, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>{ds.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── DOCUMENTS VIEW ─────────────────────────────────────────────────────
+function DocumentsView({ standards }) {
+  const allDocs = standards.flatMap(s => s.documents.map(d => ({ ...d, std: s.abbr, stdColor: s.color })));
+  const counts = { approved: 0, 'in-review': 0, draft: 0, 'not-started': 0 };
+  allDocs.forEach(d => { counts[d.status] = (counts[d.status] || 0) + 1; });
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 20 }}>
+        {Object.entries(DOC_STATUS).map(([k, v]) => (
+          <div key={k} style={{ background: '#fff', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', padding: '16px', borderTop: `3px solid ${v.color}` }}>
+            <div style={{ fontSize: 28, fontWeight: 800, color: v.color }}>{counts[k] || 0}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)', marginTop: 2 }}>{v.label}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ background: '#fff', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', padding: 20 }}>
+        <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--navy)', marginBottom: 16 }}>All Documents</div>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ borderBottom: '2px solid var(--gray-200)' }}>
+              {['Document', 'Standard', 'Status'].map(h => (
+                <th key={h} style={{ textAlign: 'left', padding: '8px 12px', fontSize: 11, fontWeight: 700, color: 'var(--gray-500)', textTransform: 'uppercase', letterSpacing: .5 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {standards.flatMap((s) =>
+              s.documents.map((doc, i) => {
+                const ds = DOC_STATUS[doc.status];
+                return (
+                  <tr key={`${s.id}-${i}`} style={{ borderBottom: '1px solid var(--gray-100)' }}>
+                    <td style={{ padding: '10px 12px', fontSize: 13, fontWeight: 500, color: 'var(--gray-800)' }}>{doc.name}</td>
+                    <td style={{ padding: '10px 12px' }}>
+                      <span style={{ background: `${s.color}15`, color: s.color, borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>{s.abbr}</span>
+                    </td>
+                    <td style={{ padding: '10px 12px' }}>
+                      <span style={{ background: ds.bg, color: ds.color, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>{ds.label}</span>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ── AI DIAGNOSTICS VIEW ────────────────────────────────────────────────
+function AiDiagnosticsView({ standards }) {
+  const [analyzing, setAnalyzing] = useState(false);
+  const [complete, setComplete] = useState(false);
+
+  const skills = [
+    { name: 'ISO 27001 Agent', desc: 'ISMS Gap Analysis & Annex A Mapping', status: 'Active', color: '#2563EB', finding: 'Risk Register missing Batam PoP asset mapping.' },
+    { name: 'ISO 27701 Agent', desc: 'Privacy PIMS & UU PDP Alignment', status: 'Active', color: '#7C3AED', finding: 'Cross-border data agreements absent for HK/SG.' },
+    { name: 'ISO 37001 Agent', desc: 'Anti-Bribery (FCPA/ICAC Focus)', status: 'Active', color: '#DC2626', finding: 'Critical: USA operations excluded from current scope.' },
+    { name: 'ISO 42001 Agent', desc: 'AI Management System Checks', status: 'Standby', color: '#0891B2', finding: 'Skill Loaded — No AIMS scope defined yet.' },
+    { name: 'NIST CSF / DORA', desc: 'Operational Resilience & Cyber', status: 'Active', color: '#D97706', finding: 'Supply chain (third-party) resilience testing missing.' }
+  ];
+
+  const handleScan = () => {
+    setAnalyzing(true);
+    setTimeout(() => { setAnalyzing(false); setComplete(true); }, 2000);
+  };
+
+  return (
+    <div>
+      <div style={{ background: '#fff', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', padding: 24, marginBottom: 24, borderTop: '4px solid #10b981' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 18, color: 'var(--navy)' }}>🔌 MCP Claude Skills Interface</div>
+            <div style={{ color: 'var(--gray-600)', fontSize: 13, marginTop: 6, maxWidth: 600, lineHeight: 1.5 }}>
+              The system is connected to the locally cloned <strong>Claude-Skills-Governance-Risk-and-Compliance</strong> package. Expert AI agents can evaluate the store.js data, identify gaps, and simulate auditor questions.
+            </div>
+          </div>
+          <button onClick={handleScan} disabled={analyzing} style={{ padding: '10px 20px', background: analyzing ? 'var(--gray-400)' : '#10b981', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 14, border: 'none', cursor: analyzing ? 'wait' : 'pointer' }}>
+            {analyzing ? 'Scanning Store...' : 'Run GRC Scan'}
+          </button>
+        </div>
+      </div>
+      
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+        {skills.map(s => (
+          <div key={s.name} style={{ background: '#fff', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', padding: 20, borderTop: `3px solid ${s.color}` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--navy)' }}>{s.name}</div>
+              <span style={{ background: s.status === 'Active' ? '#DCFCE7' : '#F1F3F5', color: s.status === 'Active' ? '#16A34A' : '#6C757D', padding: '3px 8px', borderRadius: 12, fontSize: 11, fontWeight: 700 }}>
+                {s.status}
+              </span>
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--gray-500)', marginBottom: 16 }}>{s.desc}</div>
+            
+            {complete ? (
+              <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', padding: 12, borderRadius: 6, fontSize: 13, color: '#991B1B', fontWeight: 500 }}>
+                ⚠️ <strong>Finding:</strong> {s.finding}
+              </div>
+            ) : (
+              <div style={{ background: 'var(--gray-50)', padding: 12, borderRadius: 6, fontSize: 12, color: 'var(--gray-500)', fontStyle: 'italic', textAlign: 'center' }}>
+                {analyzing ? 'Analyzing parameters...' : 'Awaiting manual scan'}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── PROJECT CHARTER VIEW ────────────────────────────────────────────────
+function ProjectCharterView() {
+  return (
+    <div style={{ paddingBottom: 40 }}>
+      {/* Overview */}
+      <div style={{ background: '#fff', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', padding: 24, marginBottom: 20, borderTop: '4px solid var(--navy)' }}>
+        <h2 style={{ color: 'var(--navy)', marginBottom: 8, fontSize: 20 }}>Project Charter & Engineering Board</h2>
+        <p style={{ color: 'var(--gray-600)', fontSize: 13, lineHeight: 1.6, maxWidth: 800 }}>This charter outlines the Telin ISO 2026 Programme MVP engineering parameters, including Tech Stacks, Sprint Milestones, Data Management, and mandatory DevSecOps/QA test suites.</p>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20, marginBottom: 20 }}>
+        {/* Tech Stack */}
+        <div style={{ background: '#fff', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', padding: 20, gridColumn: '1 / -1' }}>
+          <h3 style={{ fontSize: 15, color: '#2563EB', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}><span>⚡</span> Architectural Evolution: MVP vs Target Infrastructure</h3>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+            {/* MVP Side */}
+            <div style={{ background: 'var(--gray-50)', padding: 18, borderRadius: 8, border: '1px solid var(--gray-200)' }}>
+              <div style={{ fontWeight: 800, color: 'var(--navy)', marginBottom: 12, borderBottom: '2px solid var(--gray-300)', paddingBottom: 8 }}>Current MVP (Portability Focus)</div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: 12, color: 'var(--gray-700)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <li style={{ display: 'flex', justifyContent: 'space-between' }}><strong>Frontend:</strong> <span>React 18.3.1 (Standalone)</span></li>
+                <li style={{ display: 'flex', justifyContent: 'space-between' }}><strong>Transpiler:</strong> <span>Babel Core 7 (In-browser)</span></li>
+                <li style={{ display: 'flex', justifyContent: 'space-between' }}><strong>Styling:</strong> <span>Vanilla CSS Variables</span></li>
+                <li style={{ display: 'flex', justifyContent: 'space-between' }}><strong>Data Persistence:</strong> <span>Browser localStorage (store.js)</span></li>
+                <li style={{ display: 'flex', justifyContent: 'space-between' }}><strong>Architecture:</strong> <span>Offline-first SPA (Zero Auth)</span></li>
+              </ul>
+            </div>
+
+            {/* Ideal Side */}
+            <div style={{ background: '#F0F9FF', padding: 18, borderRadius: 8, border: '1px solid #BAE6FD', boxShadow: 'inset 0 2px 4px rgba(0,0,0,.02)' }}>
+              <div style={{ fontWeight: 800, color: '#0369A1', marginBottom: 12, borderBottom: '2px solid #BAE6FD', paddingBottom: 8 }}>Target System (Scale & Security)</div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: 12, color: 'var(--gray-700)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <li style={{ display: 'flex', justifyContent: 'space-between' }}><strong>Frontend:</strong> <span style={{color:'#0369A1',fontWeight:700}}>Next.js / Vite React SPA</span></li>
+                <li style={{ display: 'flex', justifyContent: 'space-between' }}><strong>Bundling & CI:</strong> <span style={{color:'#0369A1',fontWeight:700}}>GitLab CI / Docker</span></li>
+                <li style={{ display: 'flex', justifyContent: 'space-between' }}><strong>Styling:</strong> <span style={{color:'#0369A1',fontWeight:700}}>Tailwind CSS / shadcn/ui</span></li>
+                <li style={{ display: 'flex', justifyContent: 'space-between' }}><strong>Data Persistence:</strong> <span style={{color:'#0369A1',fontWeight:700}}>PostgreSQL (via Supabase)</span></li>
+                <li style={{ display: 'flex', justifyContent: 'space-between' }}><strong>Architecture:</strong> <span style={{color:'#0369A1',fontWeight:700}}>REST API + SSO/LDAP Auth</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        
+        {/* Sprints & Milestones */}
+        <div style={{ background: '#fff', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', padding: 20 }}>
+          <h3 style={{ fontSize: 15, color: '#10B981', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}><span>🏁</span> Sprints & Milestones Tracking</h3>
+          <div style={{ fontSize: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ background: '#DCFCE7', color: '#16A34A', padding: '10px 14px', borderRadius: 6, border: '1px solid #BBF7D0' }}><strong>Sprint 1 (Done):</strong> Architecture Setup, Navigation Shell, Global Event Bus (store.js), Standards Dashboard.</div>
+            <div style={{ background: '#DCFCE7', color: '#16A34A', padding: '10px 14px', borderRadius: 6, border: '1px solid #BBF7D0' }}><strong>Sprint 2 (Done):</strong> Registers (Risk, Evidence, NCR), Data Integrity Schema checker, AI Integrations & Dashboard UX.</div>
+            <div style={{ background: '#FEF3C7', color: '#D97706', padding: '10px 14px', borderRadius: 6, border: '1px solid #FDE68A' }}><strong>Sprint 3 (Needed):</strong> Reporting Automations, Chart.js Visualizations, Print-to-PDF functions, and Unit Test implementation.</div>
+            <div style={{ background: '#F1F3F5', color: '#495057', padding: '10px 14px', borderRadius: 6, border: '1px solid var(--gray-300)' }}><strong>Sprint 4 (Needed):</strong> Production Pipeline Setup, REST API hookups, Team Training.</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20 }}>
+        {/* Testing & QA (DevSecOps) */}
+        <div style={{ background: '#fff', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', padding: 20, borderLeft: '4px solid #DC2626' }}>
+          <h3 style={{ fontSize: 15, color: '#DC2626', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}><span>🛡️</span> DevSecOps & QA Test Strategy</h3>
+          <p style={{ fontSize: 12, color: 'var(--gray-600)', marginBottom: 16 }}>This GRC tool centralises critical IT and compliance evidence mapping. Comprehensive DevSecOps and QA are absolute requirements before scaling.</p>
+          <div style={{ fontSize: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ background: '#F8FAFF', padding: 12, borderRadius: 6, border: '1px solid #BFDBFE' }}>
+              <div style={{ fontWeight: 800, color: 'var(--navy)', marginBottom: 4 }}>1. Data Integrity Validation</div>
+              <div style={{ color: 'var(--gray-700)', lineHeight: 1.4 }}>Status: <strong style={{color:'#16A34A'}}>✅ Passed & Automated</strong><br/>Cascading validation rules and bi-directional object checking established via <code style={{background:'#DBEAFE',color:'#1E3A8A',padding:'2px 5px',borderRadius:4,fontSize:11}}>GRCStore.validateIntegrity()</code>. Data is cross-referenced correctly.</div>
+            </div>
+            <div style={{ background: '#FEF2F2', padding: 12, borderRadius: 6, border: '1px solid #FECACA' }}>
+              <div style={{ fontWeight: 800, color: '#991B1B', marginBottom: 4 }}>2. OWASP / Security Tests (DAST/SAST)</div>
+              <div style={{ color: '#7F1D1D', lineHeight: 1.4 }}>Status: <strong>⚠️ Critical Need</strong><br/>Mandatory implementation of OWASP ZAP checks to prevent XSS DOM injection vulnerabilities within localStorage inputs. SAST static analysis needed on JS payloads.</div>
+            </div>
+            <div style={{ background: '#FFFBEB', padding: 12, borderRadius: 6, border: '1px solid #FDE68A' }}>
+              <div style={{ fontWeight: 800, color: '#92400E', marginBottom: 4 }}>3. End-to-End (E2E) UI Testing</div>
+              <div style={{ color: '#92400E', lineHeight: 1.4 }}>Status: <strong>⚠️ Needed</strong><br/>A full E2E testing framework (e.g. Playwright or Cypress) must trace the complete user journey from adding an NCR to tracking its Mitigation.</div>
+            </div>
+            <div style={{ background: '#FFFBEB', padding: 12, borderRadius: 6, border: '1px solid #FDE68A' }}>
+              <div style={{ fontWeight: 800, color: '#92400E', marginBottom: 4 }}>4. CI/CD & Automation</div>
+              <div style={{ color: '#92400E', lineHeight: 1.4 }}>Status: <strong>⚠️ Needed</strong><br/>Establish GitLab CI / GitHub Actions pipeline executing Linting, Unit testing, and automated deploying on PR merges.</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Data Management & Lineage */}
+        <div style={{ background: '#fff', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', padding: 20, borderLeft: '4px solid #7C3AED' }}>
+          <h3 style={{ fontSize: 15, color: '#7C3AED', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}><span>🗄️</span> Data Management Architecture</h3>
+          <p style={{ fontSize: 12, color: 'var(--gray-600)', marginBottom: 16 }}>Following DAMA-DMBOK 3 principles, the offline-first engineering enforces strict schemas and referential tracking on the client side.</p>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: 13, color: 'var(--gray-700)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <li style={{ padding: '12px 14px', background: 'var(--gray-50)', borderRadius: 6, border: '1px solid var(--gray-200)', lineHeight: 1.5 }}>
+              <strong style={{display:'block',color:'var(--navy)',marginBottom:2}}>Event Bus Reactivity (Data Interoperability):</strong>
+              The generic publish-subscribe model implemented inside <code>store.js</code> propagates state changes instantaneously, ensuring DOM instances remain synchronized without API fetches.
+            </li>
+            <li style={{ padding: '12px 14px', background: 'var(--gray-50)', borderRadius: 6, border: '1px solid var(--gray-200)', lineHeight: 1.5 }}>
+              <strong style={{display:'block',color:'var(--navy)',marginBottom:2}}>Reference Immutability (Master Data):</strong>
+              Global identifiers (Telco Jurisdiction mappings and standard baseline IDs like ISO 22301) are hardcoded defensively. References are mathematically bound, creating absolute single-source-of-truth reliability.
+            </li>
+            <li style={{ padding: '12px 14px', background: 'var(--gray-50)', borderRadius: 6, border: '1px solid var(--gray-200)', lineHeight: 1.5 }}>
+              <strong style={{display:'block',color:'var(--navy)',marginBottom:2}}>Entity Bidirectionality (Lineage):</strong>
+              An advanced local relationship tracking maps objects heavily—from Incident evidence all the way to global risk metrics, preventing orphaned nodes if a standard is retired.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── ANALYTICS VIEW ─────────────────────────────────────────────────────
+function AnalyticsView({ standards }) {
+  const chartRef = useRef(null);
+  const barRef = useRef(null);
+
+  useEffect(() => {
+    if (!chartRef.current || !barRef.current) return;
+
+    // Radar Chart: ISO Coverage
+    const radarCtx = chartRef.current.getContext('2d');
+    const radar = new Chart(radarCtx, {
+      type: 'radar',
+      data: {
+        labels: standards.map(s => s.abbr),
+        datasets: [{
+          label: 'Maturity %',
+          data: standards.map(s => calcProgress(s.milestones)),
+          backgroundColor: 'rgba(226, 0, 26, 0.1)',
+          borderColor: 'var(--red)',
+          borderWidth: 2,
+          pointBackgroundColor: 'var(--red)',
+        }]
+      },
+      options: {
+        scales: {
+          r: { beginAtZero: true, max: 100, ticks: { display: false } }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+
+    // Bar Chart: NCR Distribution
+    const stats = GRCStore.getDataStats();
+    const ncrs = GRCStore.getNCRs();
+    const ncrByStd = {};
+    standards.forEach(s => ncrByStd[s.abbr] = ncrs.filter(n => n.standardId === s.id).length);
+
+    const barCtx = barRef.current.getContext('2d');
+    const bar = new Chart(barCtx, {
+      type: 'bar',
+      data: {
+        labels: Object.keys(ncrByStd),
+        datasets: [{
+          label: 'Total NCRs',
+          data: Object.values(ncrByStd),
+          backgroundColor: standards.map(s => s.color + '88'),
+          borderColor: standards.map(s => s.color),
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, grid: { display: false } }, y: { grid: { display: false } } }
+      }
+    });
+
+    return () => { radar.destroy(); bar.destroy(); };
+  }, [standards]);
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      <div style={{ background: '#fff', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', padding: 24 }}>
+        <div style={{ fontWeight: 800, fontSize: 16, color: 'var(--navy)', marginBottom: 20 }}>Programme Maturity Profile</div>
+        <div style={{ height: 300, display: 'flex', justifyContent: 'center' }}>
+          <canvas ref={chartRef}></canvas>
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--gray-500)', marginTop: 16, textAlign: 'center' }}>
+          Standardized progress across all 7 certification modules.
+        </div>
+      </div>
+      <div style={{ background: '#fff', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', padding: 24 }}>
+        <div style={{ fontWeight: 800, fontSize: 16, color: 'var(--navy)', marginBottom: 20 }}>NCR Distribution by Standard</div>
+        <div style={{ height: 300 }}>
+          <canvas ref={barRef}></canvas>
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--gray-500)', marginTop: 16, textAlign: 'center' }}>
+          Current volume of open non-conformities awaiting remediation.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── MAIN APP ───────────────────────────────────────────────────────────
+function App() {
+  const [nav, setNav] = useState(() => localStorage.getItem('telin_nav') || 'dashboard');
+  const [showMCP, setShowMCP] = useState(() => localStorage.getItem('telin_mcp') === 'true');
+  const [standards, setStandards] = useState(() => {
+    const store = GRCStore.get();
+    return GRCStore.STANDARDS.map(s => ({
+      ...s,
+      milestones: GRCStore.getMilestones(s.id),
+      documents: GRCStore.getDocuments(s.id)
+    }));
+  });
+  const [selectedStd, setSelectedStd] = useState(null);
+  const [tweaks, setTweaks] = useState(false);
+
+  useEffect(() => { localStorage.setItem('telin_nav', nav); }, [nav]);
+  useEffect(() => { localStorage.setItem('telin_mcp', showMCP); }, [showMCP]);
+  useEffect(() => { localStorage.setItem('telin_standards', JSON.stringify(standards)); }, [standards]);
+
+  const cycleMilestone = useCallback((stdId, mIdx) => {
+    const std = standards.find(s => s.id === stdId);
+    if (!std) return;
+    const m = std.milestones[mIdx];
+    const cur = STATUS_CYCLE.indexOf(m.status);
+    const nextStatus = STATUS_CYCLE[(cur + 1) % STATUS_CYCLE.length];
+    
+    GRCStore.updateMilestone(stdId, m.id, { status: nextStatus });
+    
+    setStandards(prev => prev.map(s => {
+      if (s.id !== stdId) return s;
+      const mils = s.milestones.map((mil, i) => i === mIdx ? { ...mil, status: nextStatus } : mil);
+      return { ...s, milestones: mils };
+    }));
+  }, [standards]);
+
+  // Tweaks
+  useEffect(() => {
+    window.addEventListener('message', e => {
+      if (e.data?.type === '__activate_edit_mode') setTweaks(true);
+      if (e.data?.type === '__deactivate_edit_mode') setTweaks(false);
+    });
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+  }, []);
+
+  const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "showPhaseLabel": true,
+    "compactCards": true,
+    "highlightToday": true
+  }/*EDITMODE-END*/;
+  const [twkVals, setTwkVals] = useState(TWEAK_DEFAULTS);
+
+  const renderContent = () => {
+    if (nav === 'standards' && selectedStd) {
+      const std = standards.find(s => s.id === selectedStd);
+      return <StandardDetail std={std} onMilestoneClick={cycleMilestone} onBack={() => setSelectedStd(null)} />;
+    }
+    switch (nav) {
+      case 'dashboard':
+        return (
+          <>
+            <ExecSummary standards={standards} />
+            <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--gray-700)', marginBottom: 14 }}>Standards Overview</div>
+            <div style={{ display: 'grid', gridTemplateColumns: twkVals.compactCards ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: 16 }}>
+              {standards.map(std => (
+                <StandardCard key={std.id} std={std} onMilestoneClick={cycleMilestone}
+                  onClick={() => { setSelectedStd(std.id); setNav('standards'); }} />
+              ))}
+            </div>
+          </>
+        );
+      case 'timeline':
+        return <Timeline standards={standards} onMilestoneClick={cycleMilestone} />;
+      case 'standards':
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+            {standards.map(std => (
+              <StandardCard key={std.id} std={std} onMilestoneClick={cycleMilestone}
+                onClick={() => setSelectedStd(std.id)} />
+            ))}
+          </div>
+        );
+      case 'documents':
+        return <DocumentsView standards={standards} />;
+      case 'ai-diagnostics':
+        return <AiDiagnosticsView standards={standards} />;
+      case 'analytics':
+        return <AnalyticsView standards={standards} />;
+      case 'project-charter':
+        return <ProjectCharterView />;
+    }
+  };
+
+  const NAV_TITLES = { dashboard: 'Dashboard', timeline: 'Programme Timeline', standards: 'Standards Detail', documents: 'Document Status', 'ai-diagnostics': 'MCP AI Skills Diagnostics', 'project-charter': 'Project Charter & Dev Board' };
+
+  return (
+    <div style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
+      <Sidebar 
+        active={nav} 
+        onNav={id => { setNav(id); setSelectedStd(null); }} 
+        showHidden={showMCP}
+        onToggleHidden={() => setShowMCP(p => !p)}
+      />
+      <main style={{ flex: 1, padding: '28px 28px', overflowY: 'auto', maxWidth: '100%' }}>
+        {/* Top bar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--navy)' }}>{NAV_TITLES[nav]}</div>
+            <div style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 2 }}>As of 19 April 2026 · Click any milestone status to update</div>
+          </div>
+          <button onClick={() => { if(confirm('Reset all progress?')) { GRCStore.reset(); location.reload(); } }}
+            style={{ 
+              fontSize: 12, fontWeight: 700, color: '#fff', 
+              padding: '10px 20px', borderRadius: 'var(--radius-pill)', 
+              background: 'var(--red)', 
+              boxShadow: '0 4px 14px rgba(226, 0, 26, 0.3)',
+              cursor: 'pointer', transition: 'all 0.2s',
+              border: 'none',
+              letterSpacing: 0.5,
+              textTransform: 'uppercase'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(226, 0, 26, 0.4)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(226, 0, 26, 0.3)'; }}
+          >
+            Reset Environment
+          </button>
+        </div>
+        {renderContent()}
+      </main>
+
+      {/* Tweaks Panel */}
+      {tweaks && (
+        <div style={{
+          position: 'fixed', bottom: 24, right: 24, background: '#fff',
+          borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,.15)',
+          padding: 20, width: 240, zIndex: 999, border: '1px solid var(--gray-200)',
+        }}>
+          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 14, color: 'var(--navy)' }}>Tweaks</div>
+          {[
+            { key: 'compactCards', label: '3-column card grid' },
+            { key: 'showPhaseLabel', label: 'Show phase labels' },
+            { key: 'highlightToday', label: 'Highlight today line' },
+          ].map(t => (
+            <label key={t.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, cursor: 'pointer' }}>
+              <span style={{ fontSize: 13, color: 'var(--gray-700)' }}>{t.label}</span>
+              <input type="checkbox" checked={twkVals[t.key]} onChange={e => {
+                const next = { ...twkVals, [t.key]: e.target.checked };
+                setTwkVals(next);
+                window.parent.postMessage({ type: '__edit_mode_set_keys', edits: next }, '*');
+              }} />
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

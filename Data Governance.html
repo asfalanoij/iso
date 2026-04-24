@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Telin — Data Governance · DAMA-DMBOK 3</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<script src="store.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0D1B2A; --red:#E2001A;
+  --gray-50:#f7f7f5; --gray-100:#f1f1f0; --gray-200:#e9ecef;
+  --gray-300:#dee2e6; --gray-500:#868685; --gray-600:#6c757d;
+  --gray-700:#37352f; --gray-900:#050505;
+  --font:'Plus Jakarta Sans',sans-serif; --mono:'DM Mono',monospace;
+  --shadow:0 1px 3px rgba(15, 15, 15, 0.1); --shadow-sm: 0 1px 2px rgba(15, 15, 15, 0.1);
+  --radius:6px; --radius-lg:10px;
+}
+html,body,#root{height:100%;font-family:var(--font);background:var(--gray-50);color:var(--gray-900);font-size:13px}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:3px}
+button{font-family:var(--font);cursor:pointer;border:none;background:none}
+</style>
+</head>
+<body><div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useMemo,useCallback}=React;
+
+// ── DAMA-DMBOK 3 Knowledge Areas mapped to Telin GRC ─────────────────────────
+const DAMA_TREE = [
+  {
+    id:'DG', num:'01', title:'Data Governance',
+    color:'#DC2626', icon:'⚖',
+    desc:'Oversight of data strategy, stewardship, policies, and accountability.',
+    telin:'Internal Audit Team as Data Steward. Telkom Board as Data Owner. ISO standards as governance frameworks.',
+    steward:'Internal Audit',
+    children:[
+      {id:'DG-1',title:'Data Stewardship',telin:'Internal Audit = orchestrator & steward across all 7 ISO programmes'},
+      {id:'DG-2',title:'Data Policies & Standards',telin:'ISO HLS clauses 4.2, 7.5 define documentation and control requirements'},
+      {id:'DG-3',title:'Data Strategy & Roadmap',telin:'ULTRAPLAN defines 2026 certification roadmap (integrated BCMS) and 2027+ expansion (ISO 14001, 42001)'},
+      {id:'DG-4',title:'Regulatory Compliance Oversight',telin:'Legal Register covers 31 regulations across 7 jurisdictions'},
+    ]
+  },
+  {
+    id:'DA', num:'02', title:'Data Architecture',
+    color:'#2563EB', icon:'🏗',
+    desc:'Enterprise data model, data flows, integration architecture, and SSoT design.',
+    telin:'Single localStorage key (telin_grc_v1). Entity-Relationship model with FK constraints. store.js as the SSoT layer.',
+    steward:'IT Security',
+    children:[
+      {id:'DA-1',title:'Enterprise Data Model',telin:'8 entity types: standards, jurisdictions, milestones, documents, evidence, NCRs, risks, legalReqs'},
+      {id:'DA-2',title:'Data Flow Architecture',telin:'store.js → shared read/write → all 7 tools (Dashboard, Evidence, NCR, Risk, Legal, Checklist)'},
+      {id:'DA-3',title:'SSoT Design',telin:'One localStorage key eliminates data duplication. On write, all FK constraints enforced before commit.'},
+      {id:'DA-4',title:'Master Data Management',telin:'Reference data (standards, jurisdictions) is code-defined and immutable at runtime'},
+    ]
+  },
+  {
+    id:'DM', num:'03', title:'Data Modelling & Design',
+    color:'#7C3AED', icon:'📐',
+    desc:'Conceptual, logical, and physical data model. Schema versioning and migration.',
+    telin:'Schema v1. Entity types with typed IDs (E-xxx, NCR-xxx, R-xxx, LR-xxx, M-xxx, D-xxx). FK arrays enforce M:M relationships.',
+    steward:'Internal Audit',
+    children:[
+      {id:'DM-1',title:'Conceptual Model',telin:'ISO standards → milestones, documents, evidence, NCRs, risks, legal requirements'},
+      {id:'DM-2',title:'Logical Model (Entity-Relationship)',telin:'evidence M:M standards, NCR M:1 standard + M:M risks + M:M evidence, risks M:M standards + M:M NCRs'},
+      {id:'DM-3',title:'Physical Model',telin:'localStorage JSON store. Schema version field (_version). Auto-migration stubs on version mismatch.'},
+      {id:'DM-4',title:'Naming Conventions',telin:'PascalCase entities, camelCase fields, typed ID prefixes (E/NCR/R/LR/M/D). ISO standard IDs: iso27001..iso22301'},
+    ]
+  },
+  {
+    id:'DSO', num:'04', title:'Data Storage & Operations',
+    color:'#059669', icon:'💾',
+    desc:'Storage mechanisms, backup, versioning, data lifecycle management.',
+    telin:'Browser localStorage as operational store. Export/Import JSON for backup. Schema versioning prevents data corruption on upgrade.',
+    steward:'IT Security',
+    children:[
+      {id:'DSO-1',title:'Storage Technology',telin:'localStorage (browser-native). Single key: telin_grc_v1. Max ~5MB per origin. Export to JSON for archival.'},
+      {id:'DSO-2',title:'Data Versioning',telin:'_version field on store root. _created and _lastModified timestamps auto-updated on every write.'},
+      {id:'DSO-3',title:'Backup & Recovery',telin:'GRCStore.exportJSON() → download JSON. GRCStore.importJSON() → restore with integrity check before commit.'},
+      {id:'DSO-4',title:'Data Lifecycle',telin:'NCR lifecycle: Open→In Progress→Pending Verification→Closed. Risk lifecycle: Open→Mitigating→Residual Accepted→Closed.'},
+    ]
+  },
+  {
+    id:'DS', num:'05', title:'Data Security',
+    color:'#B45309', icon:'🔐',
+    desc:'Data classification, access control, PII protection, breach notification.',
+    telin:'GRC data classified INTERNAL CONFIDENTIAL. UU PDP and ISO 27701 controls apply to PII within evidence and legalReqs entities.',
+    steward:'Legal',
+    children:[
+      {id:'DS-1',title:'Data Classification',telin:'INTERNAL CONFIDENTIAL (default). NCR findings may contain RESTRICTED detail. PII audit records = SENSITIVE.'},
+      {id:'DS-2',title:'Access Control',telin:'Tool-level: browser-based access. Production: integrate with Telin SSO/LDAP. Role: Internal Audit (write-all), Legal (write-legal), others (read-only).'},
+      {id:'DS-3',title:'PII in GRC Data',telin:'Auditor names, auditee names in checklist responses and NCR records may constitute PII under UU PDP. Minimise retention.'},
+      {id:'DS-4',title:'Breach Notification',telin:'If GRC store is compromised: notify Internal Audit → Legal → CISO within 1 hour. Formal breach under UU PDP within 14 days.'},
+    ]
+  },
+  {
+    id:'DII', num:'06', title:'Data Integration & Interoperability',
+    color:'#0891B2', icon:'🔗',
+    desc:'Cross-tool data sharing, event bus, referential integrity across modules.',
+    telin:'store.js event bus (GRCStore.on("change", cb)) enables cross-tool reactivity. All tools share one store — no data silos.',
+    steward:'IT Security',
+    children:[
+      {id:'DII-1',title:'Event Bus',telin:'GRCStore.on("change") fires on every write. Tools can subscribe to react to changes made in other tools.'},
+      {id:'DII-2',title:'Cross-Entity Links',telin:'NCR.riskIds[] ↔ Risk.ncrIds[] (bidirectional). NCR.evidenceIds[] → Evidence. Cascade delete enforced in store.js.'},
+      {id:'DII-3',title:'ISO Crosswalk Integration',telin:'crosswalk-data.js is static reference data (read-only). HLS clauses link to clauseRefs[] in evidence and checklist.'},
+      {id:'DII-4',title:'Future: API Integration',telin:'Roadmap: REST API adapter to integrate with current systems, CB portal.'},
+    ]
+  },
+  {
+    id:'DCM', num:'07', title:'Document & Content Management',
+    color:'#6B7280', icon:'📄',
+    desc:'Evidence register, document status lifecycle, version control.',
+    telin:'evidence[] entity is the unified document register. documents[] entity tracks master documents per standard. Status: not-started→draft→in-review→approved.',
+    steward:'Internal Audit',
+    children:[
+      {id:'DCM-1',title:'Evidence Register',telin:'35 evidence items. M:M to standards and clauseRefs[]. Single item can serve multiple ISO standards (reduces audit duplication).'},
+      {id:'DCM-2',title:'Document Status Lifecycle',telin:'not-started → draft → in-review → approved. Status change triggers update in documents[] entity.'},
+      {id:'DCM-3',title:'Version Control',telin:'Current: manual. Roadmap: add version, lastUpdated, approvedBy fields to evidence entity. Integrate with SharePoint/Google Drive.'},
+      {id:'DCM-4',title:'Document Retention',telin:'ISO HLS §7.5: retained as evidence of conformity. Minimum 3 years post-certification. UU PDP: PII-related records per regulation.'},
+    ]
+  },
+  {
+    id:'RMD', num:'08', title:'Reference & Master Data',
+    color:'#DC2626', icon:'📌',
+    desc:'Standards reference data, jurisdiction reference data, code lists.',
+    telin:'REF_STANDARDS (7 ISO standards) and REF_JURISDICTIONS (8 jurisdictions) are code-defined immutable constants. Ground truth for all FK references.',
+    steward:'Internal Audit',
+    children:[
+      {id:'RMD-1',title:'Standards Reference Data',telin:'7 standards: iso27001, iso27701, iso37001, iso20000, iso50001, iso45001, iso22301. Immutable at runtime. Color, certType, code all defined here.'},
+      {id:'RMD-2',title:'Jurisdiction Reference Data',telin:'8 jurisdictions: ID, SG, HK, TW, TL, AU, US, MULTI. Flag emoji, color, label. FK target for legalReqs.jurisdiction.'},
+      {id:'RMD-3',title:'Code Lists / Enumerations',telin:'severity: major/minor/ofi. status enums per entity. treatment: treat/accept/transfer/avoid. All validated at write time.'},
+      {id:'RMD-4',title:'Clause Reference Taxonomy',telin:'HLS clauses §4.1–10.2 + Annex A. crosswalk-data.js provides full mapping. clauseRefs[] in evidence uses these as FK-equivalent.'},
+    ]
+  },
+  {
+    id:'DWB', num:'09', title:'Data Warehousing & BI',
+    color:'#D97706', icon:'📊',
+    desc:'Dashboard analytics, KPI aggregation, executive reporting.',
+    telin:'Dashboard.html aggregates across all entities: overall % progress, RAG status, milestone completion. Real-time computed from store.',
+    steward:'Internal Audit',
+    children:[
+      {id:'DWB-1',title:'Executive Dashboard',telin:'5 KPIs: Overall %, On Track count, At Risk, Off Track, Documents Ready. Computed from milestones and evidence entities.'},
+      {id:'DWB-2',title:'Risk Heatmap',telin:'5×5 Likelihood×Impact matrix. Inherent vs residual risk comparison. Filter by standard or category.'},
+      {id:'DWB-3',title:'Compliance Scorecard',telin:'Legal Register: 31 requirements × 7 jurisdictions × 7 standards. Compliance status % by jurisdiction.'},
+      {id:'DWB-4',title:'Audit Progress Tracker',telin:'Audit Checklist: conform/NC/OFI counts per standard. Progress bar. NC summary export. Links NCRs to findings.'},
+    ]
+  },
+  {
+    id:'MM', num:'10', title:'Metadata Management',
+    color:'#7C3AED', icon:'🏷',
+    desc:'Data lineage, provenance, timestamps, schema documentation.',
+    telin:'Every store write auto-updates _lastModified. Entity IDs encode type prefix (E/NCR/R/LR). store.js is the self-documenting schema.',
+    steward:'Internal Audit',
+    children:[
+      {id:'MM-1',title:'Data Lineage',telin:'NCR → links to Risk (riskIds[]) and Evidence (evidenceIds[]). Risk → links to NCR (ncrIds[]). Bidirectional traceability.'},
+      {id:'MM-2',title:'Provenance Timestamps',telin:'_created: store creation date. _lastModified: auto-updated on every GRCStore write. Entity-level: date, lastReview, nextReview fields.'},
+      {id:'MM-3',title:'Schema Documentation',telin:'store.js JSDoc header defines all entities, FKs, cascade rules. This Data Governance page is the living schema documentation.'},
+      {id:'MM-4',title:'Audit Trail',telin:'Current: lastModified timestamp only. Roadmap: add auditTrail[] array per entity to record who changed what and when.'},
+    ]
+  },
+  {
+    id:'DQ', num:'11', title:'Data Quality',
+    color:'#16A34A', icon:'✅',
+    desc:'Completeness, accuracy, consistency, timeliness — measured and reported.',
+    telin:'GRCStore.calcDataQuality() scores completeness, timeliness, and consistency. validateIntegrity() checks all FK references. Violations surface in this dashboard.',
+    steward:'Internal Audit',
+    children:[
+      {id:'DQ-1',title:'Completeness',telin:'% of entities with all required fields populated. Measured per entity type. Target: >90% across all entities.'},
+      {id:'DQ-2',title:'Consistency',telin:'Bidirectional NCR↔Risk links validated. validateIntegrity() checks all FK references. Zero violations = consistent store.'},
+      {id:'DQ-3',title:'Timeliness',telin:'% of items not overdue (nextReview / caDue in future). Overdue items flagged in red across all tools.'},
+      {id:'DQ-4',title:'Accuracy',telin:'Manual validation: auditor confirms findings against objective evidence. CB auditor review is the ultimate accuracy gate.'},
+    ]
+  },
+];
+
+// ── Tree Node Component ────────────────────────────────────────────────────────
+function TreeNode({node,depth=0,defaultOpen=false}){
+  const [open,setOpen]=useState(defaultOpen||depth<1);
+  const hasChildren=node.children&&node.children.length>0;
+  const indent=depth*20;
+
+  return <div>
+    <div onClick={()=>hasChildren&&setOpen(!open)} style={{
+      display:'flex',alignItems:'flex-start',gap:8,padding:'8px 12px 8px '+(12+indent)+'px',
+      borderRadius:6,cursor:hasChildren?'pointer':'default',
+      background:open&&hasChildren?`${node.color||'#6B7280'}08`:'transparent',
+      borderLeft:depth===0?`3px solid ${node.color||'#6B7280'}`:`2px solid ${depth===1?node.color+'44':'var(--gray-200)'}`,
+      marginBottom:2,transition:'background .15s',
+    }}
+    onMouseEnter={e=>{if(hasChildren)e.currentTarget.style.background=`${node.color||'#6B7280'}10`;}}
+    onMouseLeave={e=>{e.currentTarget.style.background=open&&hasChildren?`${node.color||'#6B7280'}08`:'transparent';}}>
+      {hasChildren&&<span style={{fontSize:10,color:node.color||'var(--gray-500)',marginTop:2,flexShrink:0,transition:'transform .2s',display:'inline-block',transform:open?'rotate(90deg)':'none'}}>▶</span>}
+      {!hasChildren&&<span style={{width:12,display:'inline-block'}}/>}
+      <div style={{flex:1}}>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          {node.num&&<span style={{fontFamily:'var(--mono)',fontSize:10,color:node.color,fontWeight:700,background:`${node.color}18`,borderRadius:4,padding:'1px 6px'}}>{node.num}</span>}
+          {node.icon&&<span style={{fontSize:depth===0?18:13}}>{node.icon}</span>}
+          <span style={{fontWeight:depth===0?800:depth===1?600:500,fontSize:depth===0?15:depth===1?13:12,color:depth===0?'var(--navy)':'var(--gray-800)'}}>{node.title}</span>
+          {node.steward&&depth===0&&<span style={{marginLeft:'auto',fontSize:10,color:'var(--gray-500)',background:'var(--gray-100)',borderRadius:4,padding:'1px 6px',fontWeight:500}}>Steward: {node.steward}</span>}
+        </div>
+        {depth===0&&node.desc&&<div style={{fontSize:12,color:'var(--gray-600)',marginTop:3,lineHeight:1.4}}>{node.desc}</div>}
+        {node.telin&&<div style={{fontSize:11,color:depth===0?node.color:'var(--gray-600)',marginTop:3,lineHeight:1.4,borderLeft:`2px solid ${node.color||'var(--gray-300)'}`,paddingLeft:8,fontStyle:depth===0?'normal':'italic'}}>{node.telin}</div>}
+      </div>
+    </div>
+    {open&&hasChildren&&<div style={{marginLeft:indent+12}}>
+      {node.children.map(child=><TreeNode key={child.id} node={{...child,color:node.color}} depth={depth+1}/>)}
+    </div>}
+  </div>;
+}
+
+// ── Entity Relationship Diagram ────────────────────────────────────────────────
+function ERDiagram(){
+  const entities=[
+    {id:'STD',  label:'standards',    type:'REF',  x:350, y:20,  color:'#6B7280', fields:['id PK','code','abbr','certType','color']},
+    {id:'JUR',  label:'jurisdictions',type:'REF',  x:650, y:20,  color:'#6B7280', fields:['id PK','code','label','flag']},
+    {id:'MIL',  label:'milestones',   type:'MASTER',x:80, y:160, color:'#059669', fields:['id PK','standardId FK','name','phase','startWeek','status']},
+    {id:'DOC',  label:'documents',    type:'MASTER',x:600, y:160, color:'#059669', fields:['id PK','standardId FK','name','status']},
+    {id:'EV',   label:'evidence',     type:'OPS',  x:350, y:200, color:'#2563EB', fields:['id PK','standardIds[] FK','clauseRefs[]','type','status','owner']},
+    {id:'RISK', label:'risks',        type:'OPS',  x:80,  y:380, color:'#DC2626', fields:['id PK','standardIds[] FK','ncrIds[] FK','likelihood','impact','treatment']},
+    {id:'NCR',  label:'ncrs',         type:'OPS',  x:350, y:380, color:'#D97706', fields:['id PK','standardId FK','riskIds[] FK','evidenceIds[] FK','severity','status']},
+    {id:'LR',   label:'legalReqs',    type:'OPS',  x:620, y:380, color:'#7C3AED', fields:['id PK','jurisdiction FK','standardIds[] FK','type','priority','status']},
+    {id:'CR',   label:'checklistResp',type:'OPS',  x:350, y:540, color:'#0891B2', fields:['id PK','standardId FK','clauseRef','finding','evidenceSampled']},
+  ];
+
+  const lines=[
+    {from:'MIL', to:'STD', label:'M:1', cascade:'CASCADE'},
+    {from:'DOC', to:'STD', label:'M:1', cascade:'CASCADE'},
+    {from:'EV',  to:'STD', label:'M:M (standardIds[])', cascade:'SET NULL'},
+    {from:'RISK',to:'STD', label:'M:M (standardIds[])', cascade:'SET NULL'},
+    {from:'NCR', to:'STD', label:'M:1 (standardId)', cascade:'CASCADE'},
+    {from:'NCR', to:'RISK', label:'M:M (riskIds[] ↔ ncrIds[])', cascade:'NULLIFY'},
+    {from:'NCR', to:'EV',   label:'M:M (evidenceIds[])', cascade:'NULLIFY'},
+    {from:'LR',  to:'JUR',  label:'M:1 (jurisdiction)', cascade:'RESTRICT'},
+    {from:'LR',  to:'STD',  label:'M:M (standardIds[])', cascade:'SET NULL'},
+    {from:'CR',  to:'STD',  label:'M:1 (standardId)', cascade:'CASCADE'},
+  ];
+
+  const entityMap={};
+  entities.forEach(e=>entityMap[e.id]=e);
+
+  const typeColors={'REF':'#6B7280','MASTER':'#059669','OPS':'#2563EB'};
+
+    return <div style={{overflowX:'auto', paddingBottom: 20}}>
+      <svg width={960} height={720} viewBox="-20 -10 1000 740" style={{fontFamily:'var(--font)',display:'block',margin:'0 auto'}}>
+      <defs>
+        <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#94A3B8"/>
+        </marker>
+      </defs>
+
+      {/* Legend */}
+      {[['REF','Reference (immutable)'],['MASTER','Master Data'],['OPS','Operational Data']].map(([type,label],i)=>
+        <g key={type} transform={`translate(${20+i*200},8)`}>
+          <rect width={12} height={12} rx={2} fill={typeColors[type]} opacity={.7}/>
+          <text x={16} y={10} fontSize={10} fill="#6B7280">{label}</text>
+        </g>
+      )}
+
+      {/* Relationship lines */}
+      {lines.map((l,i)=>{
+        const from=entityMap[l.from];
+        const to=entityMap[l.to];
+        if(!from||!to)return null;
+        const x1=from.x+130; const y1=from.y+40;
+        const x2=to.x+130;   const y2=to.y+40;
+        const mx=(x1+x2)/2;  const my=(y1+y2)/2;
+        return <g key={i}>
+          <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#CBD5E1" strokeWidth={1.5} markerEnd="url(#arr)" strokeDasharray={l.cascade==='CASCADE'?'none':'4,3'}/>
+          <rect x={mx-30} y={my-8} width={60} height={14} rx={3} fill="#F8FAFF" opacity={.9}/>
+          <text x={mx} y={my+3} textAnchor="middle" fontSize={8} fill="#64748B">{l.label}</text>
+        </g>;
+      })}
+
+      {/* Entity boxes */}
+      {entities.map(e=><g key={e.id} transform={`translate(${e.x},${e.y})`}>
+        <rect width={260} height={30+e.fields.length*16} rx={6} fill="#fff" stroke={e.color} strokeWidth={1.5}/>
+        <rect width={260} height={28} rx={6} fill={e.color} opacity={.12}/>
+        <rect width={260} height={4} rx={0} fill={e.color} y={0}/>
+        <text x={10} y={18} fontSize={11} fontWeight={700} fill={e.color}>{e.label}</text>
+        <text x={240} y={18} textAnchor="end" fontSize={9} fill={e.color} opacity={.7}>{e.type}</text>
+        {e.fields.map((f,i)=><text key={i} x={12} y={38+i*16} fontSize={10} fill="#475569" fontFamily="'DM Mono',monospace">
+          {f}
+        </text>)}
+      </g>)}
+    </svg>
+    <div style={{textAlign:'center',fontSize:11,color:'var(--gray-500)',marginTop:4}}>Solid line = CASCADE · Dashed = SET NULL / NULLIFY · Arrow = FK direction</div>
+  </div>;
+}
+
+// ── Integrity Panel ────────────────────────────────────────────────────────────
+function IntegrityPanel(){
+  const [violations,setViolations]=useState(null);
+  const [quality,setQuality]=useState(null);
+  const [stats,setStats]=useState(null);
+  const [running,setRunning]=useState(false);
+  const [lastRun,setLastRun]=useState(null);
+  const [storeInfo,setStoreInfo]=useState(null);
+
+  const run=useCallback(()=>{
+    setRunning(true);
+    setTimeout(()=>{
+      try{
+        const v=GRCStore.validateIntegrity();
+        const q=GRCStore.calcDataQuality();
+        const s=GRCStore.getDataStats();
+        const store=GRCStore.get();
+        setViolations(v);
+        setQuality(q);
+        setStats(s);
+        setStoreInfo({version:store._version,created:store._created,lastModified:store._lastModified,size:(JSON.stringify(store).length/1024).toFixed(1)});
+        setLastRun(new Date().toLocaleTimeString());
+      }catch(e){
+        setViolations([{entity:'STORE',id:'—',field:'—',msg:'Error reading store: '+e.message}]);
+      }
+      setRunning(false);
+    },300);
+  },[]);
+
+  useEffect(()=>{run();},[]);
+
+  const scoreColor=s=>s>=90?'#16A34A':s>=70?'#D97706':'#DC2626';
+  const scoreBg=s=>s>=90?'#DCFCE7':s>=70?'#FEF3C7':'#FEE2E2';
+
+  return <div>
+    {/* Notion-Style Header */}
+    <div style={{background:'#fff', borderBottom:'1px solid var(--gray-200)', padding:'24px 28px'}}>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:24}}>
+        <div>
+          <div style={{display:'flex', alignItems:'center', gap:8, color:'var(--gray-500)', fontSize:12, marginBottom:4}}>
+            <span>ISO Certification 2026</span>
+            <span>/</span>
+            <span style={{fontWeight:600, color:'var(--gray-900)'}}>Data Governance</span>
+          </div>
+          <div style={{fontSize:24, fontWeight:800, color:'var(--gray-900)', letterSpacing:'-0.5px'}}>Data Management & Metadata</div>
+          <div style={{fontSize:13, color:'var(--gray-500)', marginTop:4}}>DAMA-DMBOK 3 Architecture · GRC SSoT v1</div>
+        </div>
+        <div style={{display:'flex', gap:10}}>
+          <button onClick={run} style={{padding:'8px 20px', borderRadius:'var(--radius-pill)', background:'var(--navy)', color:'#fff', fontWeight:700, fontSize:13, border:'none', boxShadow:'var(--shadow-sm)'}}>Validate Core</button>
+          <a href="Dashboard.html" style={{padding:'8px 16px', borderRadius:6, border:'1px solid var(--gray-200)', color:'var(--gray-700)', textDecoration:'none', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', gap:6}}>
+            <span>←</span> Dashboard
+          </a>
+        </div>
+      </div>
+
+      {/* Bento Highlights */}
+      <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(130px, 1fr))', gap:16, marginBottom:8}}>
+        {[
+          { label: 'Schema Version', val: `v${storeInfo?.version}`, color: 'var(--gray-900)', sub: 'Current GRC Schema' },
+          { label: 'Store Size', val: `${storeInfo?.size} KB`, color: '#2563EB', sub: 'localStorage utilization' },
+          { label: 'Evidence Register', val: stats?.evidence || 0, color: '#059669', sub: 'Total artifacts' },
+          { label: 'NCR Findings', val: stats?.ncrs || 0, color: '#E2001A', sub: 'Non-conformities' },
+          { label: 'Risk Portfolio', val: stats?.risks || 0, color: '#D97706', sub: 'Managed threats' },
+          { label: 'Legal Register', val: stats?.legalReqs || 0, color: '#7C3AED', sub: 'Statutory requirements' },
+        ].map(kpi => (
+          <div key={kpi.label} style={{
+            background: '#fff', border: '1px solid var(--gray-200)', borderRadius: 'var(--radius-lg)',
+            padding: '16px 20px', transition: 'all 0.2s',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = '#d4d4d4'; e.currentTarget.style.background = '#f9fafb'; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--gray-200)'; e.currentTarget.style.background = '#fff'; }}
+          >
+            <div style={{fontSize:10, fontWeight:700, color:'var(--gray-500)', textTransform:'uppercase', letterSpacing:0.8, marginBottom:8}}>{kpi.label}</div>
+            <div style={{fontSize:28, fontWeight:800, color:kpi.color, lineHeight:1, letterSpacing:'-1px'}}>{kpi.val}</div>
+            <div style={{fontSize:11, color:'var(--gray-500)', marginTop:6, fontWeight:500}}>{kpi.sub}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* Data Quality Scores */}
+    {quality&&<div style={{background:'#fff',borderRadius:'var(--radius)',boxShadow:'var(--shadow)',padding:16,marginBottom:16}}>
+      <div style={{fontWeight:700,fontSize:13,color:'var(--navy)',marginBottom:12}}>Data Quality Dimensions</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:12}}>
+        {[
+          {label:'Evidence Completeness', score:quality.evidence?.score||0},
+          {label:'NCR Completeness',      score:quality.ncrs?.score||0},
+          {label:'Risk Completeness',     score:quality.risks?.score||0},
+          {label:'Legal Req Completeness',score:quality.legalReqs?.score||0},
+        ].map(q=><div key={q.label} style={{background:scoreBg(q.score),borderRadius:8,padding:'12px',textAlign:'center'}}>
+          <div style={{fontSize:26,fontWeight:800,color:scoreColor(q.score)}}>{q.score}%</div>
+          <div style={{fontSize:11,color:scoreColor(q.score),fontWeight:600,marginTop:2}}>{q.label}</div>
+        </div>)}
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>
+        {[
+          {label:'Consistency Score',      score:quality.consistency||0,  desc:'Bidirectional NCR↔Risk FK integrity'},
+          {label:'Evidence Timeliness',    score:quality.timeliness?.evidence||0, desc:'% evidence items not overdue'},
+          {label:'Legal Review Timeliness',score:quality.timeliness?.legalReqs||0,desc:'% legal reqs not overdue for review'},
+        ].map(q=><div key={q.label} style={{background:scoreBg(q.score),borderRadius:8,padding:'12px'}}>
+          <div style={{fontSize:22,fontWeight:800,color:scoreColor(q.score)}}>{q.score}%</div>
+          <div style={{fontSize:12,fontWeight:600,color:scoreColor(q.score),marginTop:1}}>{q.label}</div>
+          <div style={{fontSize:11,color:'var(--gray-500)',marginTop:2}}>{q.desc}</div>
+        </div>)}
+      </div>
+    </div>}
+
+    {/* Integrity Violations */}
+    {violations!==null&&<div style={{background:'#fff',borderRadius:'var(--radius)',boxShadow:'var(--shadow)',padding:16}}>
+      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
+        <div style={{fontWeight:700,fontSize:13,color:'var(--navy)'}}>FK Integrity Check</div>
+        {violations.length===0
+          ?<span style={{background:'#DCFCE7',color:'#16A34A',borderRadius:20,padding:'2px 10px',fontSize:11,fontWeight:700}}>✓ All {stats?.evidence||0+stats?.ncrs||0+stats?.risks||0+stats?.legalReqs||0} FK references valid — PASS</span>
+          :<span style={{background:'#FEE2E2',color:'#DC2626',borderRadius:20,padding:'2px 10px',fontSize:11,fontWeight:700}}>⚠ {violations.length} violation(s) — FAIL</span>
+        }
+      </div>
+      {violations.length===0
+        ?<div style={{color:'#16A34A',fontSize:13,padding:'12px',background:'#DCFCE7',borderRadius:8}}>
+            ✅ No integrity violations detected. The GRC store is consistent.
+          </div>
+        :<table style={{width:'100%',borderCollapse:'collapse'}}>
+          <thead><tr style={{background:'var(--gray-50)',borderBottom:'2px solid var(--gray-200)'}}>
+            {['Entity','ID','Field','Violation'].map(h=><th key={h} style={{textAlign:'left',padding:'8px 10px',fontSize:11,fontWeight:700,color:'var(--gray-500)',textTransform:'uppercase'}}>{h}</th>)}
+          </tr></thead>
+          <tbody>{violations.map((v,i)=><tr key={i} style={{borderBottom:'1px solid var(--gray-100)',background:i%2===0?'#fff':'var(--gray-50)'}}>
+            <td style={{padding:'8px 10px',fontFamily:'var(--mono)',fontSize:11,color:'#D97706'}}>{v.entity}</td>
+            <td style={{padding:'8px 10px',fontFamily:'var(--mono)',fontSize:11,color:'var(--gray-500)'}}>{v.id}</td>
+            <td style={{padding:'8px 10px',fontFamily:'var(--mono)',fontSize:11,color:'var(--gray-600)'}}>{v.field}</td>
+            <td style={{padding:'8px 10px',fontSize:12,color:'#DC2626'}}>{v.msg}</td>
+          </tr>)}</tbody>
+        </table>
+      }
+    </div>}
+  </div>;
+}
+
+// ── Main App ───────────────────────────────────────────────────────────────────
+function App(){
+  const [tab,setTab]=useState('governance');
+  const tabs=[{id:'governance',label:'DAMA-DMBOK 3 Tree'},{id:'erd',label:'Entity-Relationship Diagram'},{id:'integrity',label:'Integrity & Quality'}];
+
+  return <div style={{minHeight:'100vh',background:'var(--gray-50)'}}>
+    {/* Header */}
+    <div style={{display:'none'}}>
+      {/* Replaced by Notion header above */}
+    </div>
+
+    {/* Tabs */}
+    <div style={{background:'#fff',borderBottom:'1px solid var(--gray-200)',padding:'0 28px',display:'flex',gap:0}}>
+      {tabs.map(t=><button key={t.id} onClick={()=>setTab(t.id)} style={{padding:'12px 20px',fontSize:13,fontWeight:600,borderBottom:`3px solid ${tab===t.id?'var(--red)':'transparent'}`,color:tab===t.id?'var(--navy)':'var(--gray-500)',background:'none',cursor:'pointer',transition:'all .15s'}}>{t.label}</button>)}
+    </div>
+
+    <div style={{padding:'24px 28px'}}>
+      {tab==='governance'&&<div style={{display:'grid',gridTemplateColumns:'1fr 340px',gap:20}}>
+        <div style={{background:'#fff',borderRadius:'var(--radius)',boxShadow:'var(--shadow)',padding:20}}>
+          <div style={{fontWeight:800,fontSize:16,color:'var(--navy)',marginBottom:4}}>DAMA-DMBOK 3 Knowledge Areas</div>
+          <div style={{fontSize:12,color:'var(--gray-500)',marginBottom:16}}>Mapped to Telin GRC data ecosystem · Click to expand/collapse · 11 knowledge areas</div>
+          <div style={{display:'flex',flexDirection:'column',gap:4}}>
+            {DAMA_TREE.map(node=><TreeNode key={node.id} node={node} depth={0} defaultOpen={false}/>)}
+          </div>
+        </div>
+        <div style={{display:'flex',flexDirection:'column',gap:14}}>
+          <div style={{background:'var(--navy)',borderRadius:'var(--radius)',padding:18,color:'#fff'}}>
+            <div style={{fontWeight:800,fontSize:15,marginBottom:8}}>SSoT Principles</div>
+            {[
+              ['Single store key','telin_grc_v1 — one source for all 6 tools'],
+              ['FK enforcement','All writes validated before commit'],
+              ['Cascade delete','ON DELETE CASCADE / SET NULL enforced in store.js'],
+              ['Event bus','GRCStore.on("change") for cross-tool reactivity'],
+              ['Schema versioning','_version field + migration stubs'],
+              ['Export/Import','JSON roundtrip with integrity check before import'],
+            ].map(([k,v])=><div key={k} style={{marginBottom:8}}>
+              <div style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,.5)',textTransform:'uppercase',letterSpacing:.4}}>{k}</div>
+              <div style={{fontSize:12,color:'rgba(255,255,255,.85)',marginTop:1}}>{v}</div>
+            </div>)}
+          </div>
+          <div style={{background:'#fff',borderRadius:'var(--radius)',boxShadow:'var(--shadow)',padding:16}}>
+            <div style={{fontWeight:700,fontSize:13,color:'var(--navy)',marginBottom:10}}>Data Stewardship Matrix</div>
+            {[
+              {steward:'Internal Audit',owns:'NCRs, Checklist, Audit Programme, Evidence',color:'#059669'},
+              {steward:'Legal',owns:'Legal Register, ABMS Evidence, Privacy Records',color:'#DC2626'},
+              {steward:'IT Security',owns:'ISMS Evidence, Risk Register (InfoSec), Configs',color:'#2563EB'},
+              {steward:'HR',owns:'OHS Evidence, Competence Matrix, Training Records',color:'#0891B2'},
+              {steward:'Facility Mgmt',owns:'EnMS Evidence, Energy Baseline, EnPI Records',color:'#D97706'},
+              {steward:'Top Management',owns:'Management Review Minutes, Policy Approvals',color:'#7C3AED'},
+            ].map(s=><div key={s.steward} style={{padding:'7px 10px',borderRadius:6,background:'var(--gray-50)',marginBottom:5,borderLeft:`3px solid ${s.color}`}}>
+              <div style={{fontWeight:700,fontSize:12,color:s.color}}>{s.steward}</div>
+              <div style={{fontSize:11,color:'var(--gray-600)',marginTop:1}}>{s.owns}</div>
+            </div>)}
+          </div>
+          <div style={{background:'#FFF7ED',borderRadius:'var(--radius)',padding:14,border:'1px solid #FED7AA'}}>
+            <div style={{fontWeight:700,fontSize:12,color:'#92400E',marginBottom:6}}>⚠ Roadmap: Production Upgrade</div>
+            <div style={{fontSize:11,color:'#78350F',lineHeight:1.5}}>
+              Current: browser localStorage (dev/pilot).<br/>
+              Next: REST API + PostgreSQL SSoT.<br/>
+              Auth: Telin SSO/LDAP integration.<br/>
+              Audit trail: per-entity change log.<br/>
+              Integration: current systems.
+            </div>
+          </div>
+        </div>
+      </div>}
+
+      {tab==='erd'&&<div style={{background:'#fff',borderRadius:'var(--radius)',boxShadow:'var(--shadow)',padding:24}}>
+        <div style={{fontWeight:800,fontSize:16,color:'var(--navy)',marginBottom:4}}>Entity-Relationship Diagram</div>
+        <div style={{fontSize:12,color:'var(--gray-500)',marginBottom:16}}>Telin GRC Store · store.js v1 · DAMA-DMBOK 3: Data Modelling & Design (KA-03)</div>
+        <ERDiagram/>
+        <div style={{marginTop:20,display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}}>
+          {[
+            {title:'Cascade Rules',items:['milestones: ON DELETE standard → CASCADE','documents: ON DELETE standard → CASCADE','ncrs: ON DELETE standard → CASCADE','checklistResp: ON DELETE standard → CASCADE']},
+            {title:'Set Null Rules',items:['evidence.standardIds[]: ON DELETE standard → PULL','risks.standardIds[]: ON DELETE standard → PULL','legalReqs.standardIds[]: ON DELETE standard → PULL','legalReqs.jurisdiction: ON DELETE jurisdiction → RESTRICT']},
+            {title:'Bidirectional Links',items:['ncr.riskIds[] ↔ risk.ncrIds[]','ON DELETE ncr → pull from risks.ncrIds[]','ON DELETE risk → pull from ncrs.riskIds[]','ON DELETE evidence → pull from ncrs.evidenceIds[]']},
+          ].map(section=><div key={section.title} style={{background:'var(--gray-50)',borderRadius:8,padding:12}}>
+            <div style={{fontWeight:700,fontSize:12,color:'var(--navy)',marginBottom:8}}>{section.title}</div>
+            {section.items.map(item=><div key={item} style={{fontSize:11,fontFamily:'var(--mono)',color:'var(--gray-700)',marginBottom:4,padding:'3px 6px',background:'#fff',borderRadius:4}}>{item}</div>)}
+          </div>)}
+        </div>
+      </div>}
+
+      {tab==='integrity'&&<IntegrityPanel/>}
+    </div>
+
+    <div style={{padding:'12px 28px',borderTop:'1px solid var(--gray-200)',display:'flex',gap:16}}>
+      <a href="Dashboard.html"      style={{fontSize:12,color:'var(--gray-600)',textDecoration:'none',fontWeight:500}}>← Dashboard</a>
+      <a href="Evidence Register.html" style={{fontSize:12,color:'#2563EB',textDecoration:'none',fontWeight:500}}>Evidence Register</a>
+      <a href="NCR Tracker.html"    style={{fontSize:12,color:'#2563EB',textDecoration:'none',fontWeight:500}}>NCR Tracker</a>
+      <a href="Risk Register.html"  style={{fontSize:12,color:'#2563EB',textDecoration:'none',fontWeight:500}}>Risk Register</a>
+      <a href="Legal Register.html" style={{fontSize:12,color:'#2563EB',textDecoration:'none',fontWeight:500}}>Legal Register</a>
+    </div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

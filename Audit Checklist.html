@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Telin — Internal Audit Checklist</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<script src="store.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0D1B2A;
+  --red:#E2001A;
+  --gray-50:#f7f7f5;
+  --gray-100:#f1f1f0;
+  --gray-200:#e9ecef;
+  --gray-300:#dee2e6;
+  --gray-500:#868685;
+  --gray-600:#6c757d;
+  --gray-700:#37352f;
+  --gray-900:#050505;
+  --font:'Plus Jakarta Sans',sans-serif;
+  --mono:'DM Mono',monospace;
+  --shadow:0 1px 3px rgba(15, 15, 15, 0.1);
+  --shadow-sm: 0 1px 2px rgba(15, 15, 15, 0.1);
+  --radius:6px;
+  --radius-lg:10px;
+}
+html,body,#root{height:100%;font-family:var(--font);background:var(--gray-50);color:var(--gray-900);font-size:13px}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:3px}
+button,input,select,textarea{font-family:var(--font)}
+input,select,textarea{border:1px solid var(--gray-300);border-radius:6px;padding:6px 9px;font-size:12px;outline:none;background:#fff;transition:border-color .15s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:#2563EB;box-shadow:0 0 0 2px rgba(37,99,235,.1)}
+</style>
+</head>
+<body><div id="root"></div>
+<script type="text/babel">
+const {useState,useMemo,useEffect}=React;
+
+const STD_META={
+  iso27001:{abbr:'ISMS',color:'#2563EB',code:'ISO/IEC 27001:2022'},
+  iso27701:{abbr:'PIMS',color:'#7C3AED',code:'ISO/IEC 27701:2019'},
+  iso37001:{abbr:'ABMS',color:'#DC2626',code:'ISO 37001:2016'},
+  iso20000:{abbr:'ITSMS',color:'#059669',code:'ISO/IEC 20000-1:2018'},
+  iso50001:{abbr:'EnMS',color:'#D97706',code:'ISO 50001:2018'},
+  iso45001:{abbr:'OHSMS',color:'#0891B2',code:'ISO 45001:2018'},
+  iso22301:{abbr:'BCMS',color:'#B91C1C',code:'ISO 22301:2019'},
+};
+const FINDINGS={conform:{label:'Conform',color:'#16A34A',bg:'#DCFCE7',icon:'✓'},nc:{label:'NC',color:'#DC2626',bg:'#FEE2E2',icon:'✗'},ofi:{label:'OFI',color:'#2563EB',bg:'#EFF6FF',icon:'△'},'n-a':{label:'N/A',color:'#ADB5BD',bg:'#F1F3F5',icon:'—'},'not-checked':{label:'Pending',color:'#9CA3AF',bg:'#F3F4F6',icon:'○'}};
+const METHODS=['Document Review','Interview','Observation','Test / Demonstration','Record Sampling'];
+
+// Checklist questions per standard
+const CHECKLISTS={
+  iso27001:[
+    {section:'4 — Context',clause:'4.1',question:'Has the organization determined internal and external issues relevant to its purpose and that affect ISMS objectives? Is this documented and reviewed?',method:'Document Review',evidenceRef:'Context Analysis Document'},
+    {section:'4 — Context',clause:'4.2',question:'Has the organization identified interested parties and their requirements relevant to the ISMS? Are legal/regulatory requirements (UU PDP, PSTE, CSA, SOCI) included?',method:'Document Review',evidenceRef:'Interested Parties Register'},
+    {section:'4 — Context',clause:'4.3',question:'Is the ISMS scope documented? Does it clearly define boundaries, inclusions, exclusions with justification? Is it consistent with the asset inventory?',method:'Document Review',evidenceRef:'ISMS Scope Document'},
+    {section:'5 — Leadership',clause:'5.1',question:'Is there evidence of top management commitment to the ISMS? (e.g. policy endorsement, resource allocation, management review participation)',method:'Interview',evidenceRef:'Management Review Minutes'},
+    {section:'5 — Leadership',clause:'5.2',question:'Is the Information Security Policy documented, approved by top management, communicated to all staff, and reviewed periodically?',method:'Document Review',evidenceRef:'Information Security Policy'},
+    {section:'5 — Leadership',clause:'5.3',question:'Are ISMS roles and responsibilities clearly defined and communicated? Is a CISO/ISMS Manager formally appointed?',method:'Document Review',evidenceRef:'Org Chart, Role Descriptions'},
+    {section:'6 — Planning',clause:'6.1.2',question:'Has a formal information security risk assessment been conducted? Does it cover all assets in scope, including submarine cable systems and TOCC? Is methodology documented?',method:'Document Review',evidenceRef:'Risk Assessment Report'},
+    {section:'6 — Planning',clause:'6.1.3',question:'Has a risk treatment plan been developed? Is the Statement of Applicability (SoA) complete, justified, and approved? Do all Annex A controls have a documented rationale?',method:'Document Review',evidenceRef:'Risk Treatment Plan, SoA'},
+    {section:'6 — Planning',clause:'6.2',question:'Are information security objectives established, measurable, and monitored? Are they communicated to relevant personnel?',method:'Document Review',evidenceRef:'ISMS Objectives Register'},
+    {section:'7 — Support',clause:'7.1',question:'Are adequate resources provided for ISMS implementation and maintenance? Is budget documented?',method:'Interview',evidenceRef:'Budget Records'},
+    {section:'7 — Support',clause:'7.2',question:'Are competence requirements defined for ISMS roles? Are training records maintained? Is there evidence of effectiveness evaluation?',method:'Document Review',evidenceRef:'Competence Matrix, Training Records'},
+    {section:'7 — Support',clause:'7.3',question:'Is security awareness program in place? Are all staff and contractors included? Is phishing simulation or similar testing conducted?',method:'Interview',evidenceRef:'Awareness Programme Records'},
+    {section:'7 — Support',clause:'7.4',question:'Are internal and external communication processes defined for information security matters, including breach notification?',method:'Document Review',evidenceRef:'Communication Plan'},
+    {section:'7 — Support',clause:'7.5',question:'Is documented information created, controlled, and maintained as required? Is version control and access control applied to ISMS documents?',method:'Document Review',evidenceRef:'Document Control Procedure'},
+    {section:'8 — Operation',clause:'8.1',question:'Are information security controls implemented as planned? Is there evidence of operational control execution (access reviews, patch management, network monitoring)?',method:'Test / Demonstration',evidenceRef:'Control Evidence, TOCC Logs'},
+    {section:'8 — Operation',clause:'8.2',question:'Are information security risk assessments performed at planned intervals or when significant changes occur? Are results documented?',method:'Document Review',evidenceRef:'Risk Assessment Records'},
+    {section:'8 — Operation',clause:'8.3',question:'Is the risk treatment plan being executed? Are control implementation records maintained and linked to the SoA?',method:'Document Review',evidenceRef:'Risk Treatment Records'},
+    {section:'9 — Evaluation',clause:'9.1',question:'Are ISMS performance indicators monitored and measured? Are results analysed and reported to management?',method:'Document Review',evidenceRef:'KPI Dashboard, Reports'},
+    {section:'9 — Evaluation',clause:'9.2',question:'Is the internal audit programme documented and implemented? Are audit reports complete, including findings and conclusions? Are auditors independent?',method:'Document Review',evidenceRef:'Audit Programme, Audit Reports'},
+    {section:'9 — Evaluation',clause:'9.3',question:'Has management review been conducted? Do minutes include all required HLS §9.3 inputs? Are outputs (decisions and actions) documented?',method:'Document Review',evidenceRef:'Management Review Minutes'},
+    {section:'10 — Improvement',clause:'10.1',question:'Is there a formal nonconformity and corrective action process? Are NCRs logged with root cause analysis, corrective actions, and verification of effectiveness?',method:'Document Review',evidenceRef:'NCR Tracker'},
+    {section:'Annex A',clause:'A.5.1',question:'Are information security policies approved, published and reviewed annually?',method:'Document Review',evidenceRef:'Policy Register'},
+    {section:'Annex A',clause:'A.5.19',question:'Is there a formal process for identifying, assessing and managing information security risks in supplier relationships, including submarine cable equipment suppliers?',method:'Document Review',evidenceRef:'Supplier Risk Register'},
+    {section:'Annex A',clause:'A.8.7',question:'Are controls against malware implemented? (EDR, email filtering, web proxy, patch management) Is there evidence of effectiveness?',method:'Test / Demonstration',evidenceRef:'Security Tool Configs, Logs'},
+    {section:'Annex A',clause:'A.8.15',question:'Are logs produced, protected, and reviewed for security events? Is SIEM or equivalent in use at TOCC?',method:'Test / Demonstration',evidenceRef:'Log Management System'},
+  ],
+  iso27701:[
+    {section:'5 — PIMS Context',clause:'5.2.1',question:'Has the organization determined PII-processing context including regulatory requirements per jurisdiction (UU PDP ID, PDPA SG, PDPO HK, Privacy Act AU, CCPA US)?',method:'Document Review',evidenceRef:'PII Context Analysis'},
+    {section:'5 — PIMS Context',clause:'5.3.2',question:'Is a Privacy/PII Policy documented and communicated? Does it address rights of PII principals?',method:'Document Review',evidenceRef:'Privacy Policy'},
+    {section:'5 — PIMS Context',clause:'5.3.3',question:'Is a DPO or Privacy Officer formally appointed? Are their responsibilities documented? Are they appropriately resourced?',method:'Interview',evidenceRef:'DPO Appointment Letter'},
+    {section:'6 — Planning',clause:'5.4.1',question:'Has a Privacy Impact Assessment (PIA/DPIA) been conducted for high-risk PII processing activities? Are results documented?',method:'Document Review',evidenceRef:'PIA/DPIA Register'},
+    {section:'7 — Support',clause:'5.5.2',question:'Are privacy-specific competence requirements defined? Do staff handling PII receive privacy training?',method:'Document Review',evidenceRef:'Training Records'},
+    {section:'8 — PII Controller',clause:'7.2.1',question:'Is a complete inventory of PII processing activities maintained (equivalent to Art. 30 GDPR Records)? Does it include cross-border transfers to SG, HK, AU, US subsidiaries?',method:'Document Review',evidenceRef:'PII Processing Records'},
+    {section:'8 — PII Controller',clause:'7.2.2',question:'Is there a documented lawful basis for each PII processing activity? Is consent obtained and recorded where required?',method:'Document Review',evidenceRef:'Consent Records, Legal Basis Register'},
+    {section:'8 — PII Controller',clause:'7.3.2',question:'Is there a procedure for handling data subject rights requests (access, correction, deletion, portability)? Is it tested? Are response times within regulatory requirements?',method:'Test / Demonstration',evidenceRef:'DSR Procedure, Request Log'},
+    {section:'8 — PII Controller',clause:'7.2.6',question:'Is there a documented cross-border PII transfer mechanism for each jurisdiction pair? (contractual clauses, consent, adequacy)',method:'Document Review',evidenceRef:'Cross-Border Transfer Register'},
+    {section:'8 — Breach',clause:'7.5',question:'Is there a PII breach notification procedure? Does it meet 14-day (UU PDP), 3-day (PDPA SG), 30-day (Privacy Act AU) notification timelines? Has it been tested?',method:'Document Review',evidenceRef:'Breach Notification SOP'},
+    {section:'8 — Processor',clause:'8.5.3',question:'Are data processing agreements (DPA) in place with all PII processors (subcontractors, cloud providers)?',method:'Document Review',evidenceRef:'DPA Register'},
+    {section:'9 — Evaluation',clause:'5.7.2',question:'Does the internal audit cover privacy controls? Are privacy-specific audit questions included?',method:'Document Review',evidenceRef:'Audit Programme'},
+  ],
+  iso37001:[
+    {section:'4 — Context',clause:'4.1',question:'Has the organization assessed bribery risk in its context, including high-risk jurisdictions (Indonesia, HK, TL) and high-risk activities (procurement, sales, government relations)?',method:'Document Review',evidenceRef:'Bribery Risk Assessment'},
+    {section:'4 — Context',clause:'4.2',question:'Are interested parties for ABMS identified, including governing body (Telkom Board), employees, business associates, and regulators (KPK, DOJ/FCPA, ICAC)?',method:'Document Review',evidenceRef:'Interested Parties Register'},
+    {section:'5 — Leadership',clause:'5.1',question:'Is there evidence of BOTH top management AND governing body (Telkom Board/Commissioners) commitment to ABMS? Are both bodies involved in oversight?',method:'Interview',evidenceRef:'Board Resolution, Management Review Minutes'},
+    {section:'5 — Leadership',clause:'5.2',question:'Is the Anti-Bribery Policy approved, zero-tolerance in tone, communicated to all staff AND business associates? Is it publicly available?',method:'Document Review',evidenceRef:'Anti-Bribery Policy'},
+    {section:'5 — Leadership',clause:'5.3',question:'Is the ABMS Compliance Function established with adequate independence, authority, and resources? Is the compliance officer formally appointed?',method:'Interview',evidenceRef:'Compliance Function Charter'},
+    {section:'6 — Planning',clause:'8.7',question:'Has a documented bribery risk assessment been conducted? Does it cover all entities in ABMS scope? Does it include Telin USA (FCPA) and Telin HK (ICAC)?',method:'Document Review',evidenceRef:'Bribery Risk Assessment'},
+    {section:'7 — Support',clause:'7.2',question:'Are anti-bribery training records maintained? Is training role-specific (high-risk roles receive more intensive training)? Is governing body training documented?',method:'Document Review',evidenceRef:'Training Records, Attendance Logs'},
+    {section:'8 — Due Diligence',clause:'8.2',question:'Is the ABMS Compliance Function conducting/coordinating anti-bribery due diligence? Are they reporting to top management and governing body?',method:'Interview',evidenceRef:'Compliance Function Reports'},
+    {section:'8 — Due Diligence',clause:'8.4',question:'Is due diligence conducted on business associates before engagement and periodically thereafter? Is methodology proportionate to risk? Is the register complete?',method:'Document Review',evidenceRef:'Due Diligence Register'},
+    {section:'8 — Gifts',clause:'8.6',question:'Is there a documented gifts, hospitality, and donations procedure? Are thresholds defined? Is the register maintained and reviewed?',method:'Document Review',evidenceRef:'Gift & Hospitality Register'},
+    {section:'8 — Financial',clause:'8.8',question:'Are financial controls reviewed for anti-bribery purposes? Are payment authorisation, expense claims, and petty cash subject to ABMS controls?',method:'Document Review',evidenceRef:'Financial Control Evidence'},
+    {section:'8 — Concerns',clause:'8.9',question:'Is there a whistleblower / raising concerns mechanism? Is it accessible to all staff and business associates? Is anonymity protected? Are reports investigated?',method:'Test / Demonstration',evidenceRef:'Whistleblower System, Investigation Log'},
+    {section:'8 — Investigation',clause:'8.10',question:'Is there a procedure for investigating suspected bribery? Has it been tested? Are investigation records maintained confidentially?',method:'Document Review',evidenceRef:'Investigation Procedure'},
+    {section:'9 — Evaluation',clause:'9.3',question:'Has management review covered ABMS performance? Has governing body been separately briefed? Are actions documented?',method:'Document Review',evidenceRef:'Management Review Minutes, Board Papers'},
+  ],
+  iso20000:[
+    {section:'4 — Context',clause:'4.1',question:'Is the SMS scope defined? Does it align with the service catalogue and customer agreements?',method:'Document Review',evidenceRef:'SMS Scope, Service Catalogue'},
+    {section:'5 — Leadership',clause:'5.2',question:'Is the Service Management Policy documented and communicated? Does it commit to meeting customer SLA requirements?',method:'Document Review',evidenceRef:'Service Management Policy'},
+    {section:'6 — Planning',clause:'6.1',question:'Are risks to service delivery identified and managed? Is there a risk register for SMS?',method:'Document Review',evidenceRef:'SMS Risk Register'},
+    {section:'8 — Incident Mgmt',clause:'8.6.1',question:'Is the incident management process documented and implemented? Are incidents classified, prioritised, and resolved within SLA? Are major incidents escalated?',method:'Record Sampling',evidenceRef:'Incident Records (sample 10)'},
+    {section:'8 — Problem Mgmt',clause:'8.6.2',question:'Is problem management process in place? Are recurring incidents analysed for root causes? Are known errors documented?',method:'Document Review',evidenceRef:'Problem Records, Known Error DB'},
+    {section:'8 — Change Mgmt',clause:'8.5',question:'Is change management process implemented? Are all changes (normal, standard, emergency) classified and approved through CAB? Are post-implementation reviews conducted?',method:'Record Sampling',evidenceRef:'Change Records (sample 10)'},
+    {section:'8 — Config Mgmt',clause:'8.3',question:'Is configuration management in place? Is the CMDB up to date? Is configuration audit conducted periodically?',method:'Test / Demonstration',evidenceRef:'CMDB, Configuration Audit Records'},
+    {section:'8 — Service Continuity',clause:'8.7',question:'Are service continuity plans documented and tested? Do they cover submarine cable failure scenarios? Are RTO/RPO objectives defined?',method:'Document Review',evidenceRef:'Service Continuity Plan, Test Records'},
+    {section:'8 — SLA Reporting',clause:'8.2',question:'Are SLA performance reports produced and reviewed with customers? Are SLA breaches documented and corrective actions taken?',method:'Document Review',evidenceRef:'SLA Reports (last 3 months)'},
+    {section:'9 — Monitoring',clause:'9.1',question:'Are service performance metrics monitored? Are KPIs reported to management? Is TOCC monitoring data used for service improvement?',method:'Document Review',evidenceRef:'TOCC Reports, KPI Dashboard'},
+    {section:'9 — Internal Audit',clause:'9.2',question:'Has SMS internal audit been conducted? Does it cover all service management processes? Are findings documented?',method:'Document Review',evidenceRef:'Audit Programme, Audit Reports'},
+  ],
+  iso50001:[
+    {section:'4 — Context',clause:'4.1',question:'Has the organization determined internal and external issues affecting EnMS? Are energy-related regulations (PP ESDM, Singapore Green Plan, AU NEPP) identified?',method:'Document Review',evidenceRef:'EnMS Context Analysis'},
+    {section:'5 — Leadership',clause:'5.2',question:'Is the Energy Policy documented, approved by top management, and communicated? Does it commit to continual improvement of energy performance?',method:'Document Review',evidenceRef:'Energy Policy'},
+    {section:'5 — Leadership',clause:'5.3',question:'Is an Energy Management Representative (EMR) formally appointed? Is an energy team established?',method:'Interview',evidenceRef:'EMR Appointment Letter'},
+    {section:'6 — Energy Review',clause:'6.3',question:'Has a comprehensive energy review been conducted? Does it identify significant energy uses (SEUs)? Are data centers and PoPs included?',method:'Document Review',evidenceRef:'Energy Review Report'},
+    {section:'6 — Baseline',clause:'6.4',question:'Is an energy baseline established based on at least 12 months of historical data? Is the baseline period appropriate and documented?',method:'Document Review',evidenceRef:'Energy Baseline Data'},
+    {section:'6 — EnPIs',clause:'6.5',question:'Are Energy Performance Indicators (EnPIs) defined and documented? Are they relevant to the significant energy uses? Are they being monitored?',method:'Document Review',evidenceRef:'EnPI Register, Monitoring Records'},
+    {section:'6 — Objectives',clause:'6.6',question:'Are energy objectives and targets established? Are they SMART and aligned with the energy policy? Are action plans documented?',method:'Document Review',evidenceRef:'Energy Objectives, Action Plans'},
+    {section:'7 — Competence',clause:'7.2',question:'Are competence requirements defined for personnel affecting energy performance? Are training records maintained?',method:'Document Review',evidenceRef:'Competence Matrix, Training Records'},
+    {section:'8 — Operational Control',clause:'8.1',question:'Are operational controls for significant energy uses implemented and documented? Are energy-efficient operating procedures in place?',method:'Observation',evidenceRef:'Operating Procedures, Site Inspection'},
+    {section:'8 — Design',clause:'8.2',question:'Are energy performance criteria included in the design of new, modified, and renovated facilities and equipment?',method:'Document Review',evidenceRef:'Design Specifications, Project Records'},
+    {section:'8 — Procurement',clause:'8.3',question:'Are energy performance criteria included in procurement of energy services, products, and equipment?',method:'Document Review',evidenceRef:'Procurement Procedure, Purchase Records'},
+    {section:'9 — Monitoring',clause:'9.1',question:'Are EnPIs monitored and measured at planned intervals? Are results compared against the energy baseline? Are deviations investigated?',method:'Document Review',evidenceRef:'EnPI Monitoring Records'},
+    {section:'9 — Internal Audit',clause:'9.2',question:'Has EnMS internal audit been conducted? Does it cover energy data verification? Are auditors competent in energy management?',method:'Document Review',evidenceRef:'Audit Programme, Audit Reports'},
+  ],
+  iso45001:[
+    {section:'4 — Context',clause:'4.1',question:'Has the organization determined internal and external issues affecting OH&SMS? Are statutory requirements (PP 50/2012 SMK3, WHS Act AU, OSHA US) identified?',method:'Document Review',evidenceRef:'Context Analysis, Legal Register'},
+    {section:'5 — Leadership',clause:'5.1',question:'Is there evidence of top management leading by example on OHS? Are leaders visible in safety activities? Is OHS integrated into business strategy?',method:'Interview',evidenceRef:'Management Review Minutes, Site Visits'},
+    {section:'5 — Leadership',clause:'5.2',question:'Is the OH&S Policy documented, appropriate to scope, committed to zero-harm? Is it communicated to all workers including contractors?',method:'Document Review',evidenceRef:'OH&S Policy'},
+    {section:'5 — Consultation',clause:'5.4',question:'Are workers consulted in development of OHS policies and procedures? Is there a formal worker consultation mechanism (safety committee, safety rep)?',method:'Interview',evidenceRef:'Safety Committee Minutes'},
+    {section:'6 — Hazard ID',clause:'6.1.1',question:'Is hazard identification process documented? Does it cover all work activities including submarine cable maintenance, marine operations, working at height, and confined spaces?',method:'Document Review',evidenceRef:'HIRA Register'},
+    {section:'6 — Risk Assessment',clause:'6.1.2',question:'Have OHS risks been assessed using a documented methodology? Are controls selected following the hierarchy of controls? Are residual risks acceptable?',method:'Document Review',evidenceRef:'HIRA, Risk Treatment Records'},
+    {section:'6 — Legal',clause:'6.1.3',question:'Are applicable OHS legal requirements identified and evaluated for compliance? Is a legal register maintained and reviewed?',method:'Document Review',evidenceRef:'Legal Register (OHS section)'},
+    {section:'7 — Competence',clause:'7.2',question:'Are OHS competence requirements defined for all roles including contractors? Are training records maintained? Are records for high-risk activities (diving, working at height) current?',method:'Document Review',evidenceRef:'Competence Matrix, Training Records'},
+    {section:'8 — Operational Control',clause:'8.1.1',question:'Are OHS operational controls implemented for all significant hazards? Is there a permit-to-work system for high-risk activities?',method:'Observation',evidenceRef:'Permit-to-Work Records, Site Inspection'},
+    {section:'8 — Emergency',clause:'8.2',question:'Are emergency response plans documented and tested? Do they cover fire, medical emergency, cable ship incident? Are drill records maintained?',method:'Document Review',evidenceRef:'Emergency Response Plan, Drill Records'},
+    {section:'8 — Contractors',clause:'8.1.4',question:'Are OHS requirements communicated to contractors? Is contractor OHS performance monitored? Are contractor incidents reported?',method:'Document Review',evidenceRef:'Contractor OHS Agreements, Inspection Records'},
+    {section:'9 — Monitoring',clause:'9.1',question:'Are OHS performance indicators monitored (LTIFR, TRIFR, near misses, unsafe acts)? Are results trended and reported to management?',method:'Document Review',evidenceRef:'OHS KPI Reports'},
+    {section:'9 — Legal Compliance',clause:'9.1.2',question:'Is there a process for evaluating compliance with OHS legal requirements? Is the evaluation documented? Is SMK3 (PP 50/2012) audit status tracked separately?',method:'Document Review',evidenceRef:'Legal Compliance Evaluation, SMK3 Records'},
+    {section:'9 — Internal Audit',clause:'9.2',question:'Has OHS internal audit been conducted? Does it include workplace inspections? Are auditors independent and competent?',method:'Document Review',evidenceRef:'Audit Programme, Audit Reports'},
+    {section:'10 — Incident',clause:'10.2',question:'Are OHS incidents (injuries, near misses, dangerous occurrences) reported, investigated, and root-caused? Are corrective actions tracked? Are statutory notifications made to Kemnaker/OSHA?',method:'Document Review',evidenceRef:'Incident Register, Investigation Reports'},
+  ],
+  iso22301:[
+    {section:'4 — Context',clause:'4.1',question:'Has the organization determined external and internal issues relevant to its purpose and its ability to achieve intended outcomes of the BCMS?',method:'Document Review',evidenceRef:'BCMS Context Analysis'},
+    {section:'6 — BIA',clause:'8.2.2',question:'Has a Business Impact Analysis (BIA) been conducted to determine continuity requirements, RTO, and RPO?',method:'Document Review',evidenceRef:'BIA Report'},
+    {section:'8 — Operations',clause:'8.3',question:'Are Business Continuity Strategies and Solutions identified and selected based on the BIA?',method:'Interview',evidenceRef:'BC Strategy Document'},
+    {section:'8 — Exercise',clause:'8.5',question:'Has the organization exercised and tested its business continuity procedures? Are exercise reports maintained?',method:'Test / Demonstration',evidenceRef:'Exercise & Testing Reports'},
+    {section:'9 — Internal Audit',clause:'9.2',question:'Has an internal audit been conducted for BCMS?',method:'Document Review',evidenceRef:'Audit Programme, Audit Reports'},
+  ],
+};
+
+function App(){
+  const [selectedStd,setSelectedStd]=useState('iso27001');
+  const [auditDate,setAuditDate]=useState(new Date().toISOString().split('T')[0]);
+  const [auditor,setAuditor]=useState('Internal Audit Team');
+  const [auditee,setAuditee]=useState('');
+  const [responses,setResponses]=useState(()=>GRCStore.get().checklistResponses||{});
+  const [showSummary,setShowSummary]=useState(false);
+
+  useEffect(()=>{ const h=()=>setResponses(GRCStore.get().checklistResponses||{}); GRCStore.on('change',h); return ()=>GRCStore.off('change',h); },[]);
+
+  const std=STD_META[selectedStd];
+  const questions=CHECKLISTS[selectedStd]||[];
+  const getKey=(stdId,idx)=>`${stdId}-${idx}`;
+  const getResp=(stdId,idx)=>responses[getKey(stdId,idx)]||{finding:'not-checked',evidence:'',notes:''};
+  const setResp=(stdId,idx,field,val)=>{
+    const k=getKey(stdId,idx);
+    const updated={...getResp(stdId,idx),[field]:val};
+    GRCStore.setChecklistResponse(stdId,idx,updated);
+  };
+
+  const stats=useMemo(()=>{
+    const s={conform:0,nc:0,ofi:0,'n-a':0,'not-checked':0};
+    questions.forEach((_,i)=>{const r=getResp(selectedStd,i);s[r.finding]=(s[r.finding]||0)+1;});
+    return s;
+  },[selectedStd,responses,questions]);
+
+  const pct=questions.length?Math.round((stats.conform+stats['n-a'])/questions.length*100):0;
+
+  const sections=[...new Set(questions.map(q=>q.section))];
+
+  return <div style={{minHeight:'100vh',background:'var(--gray-50)'}}>
+    {/* Notion-Style Header */}
+    <div style={{background:'#fff', borderBottom:'1px solid var(--gray-200)', padding:'24px 28px'}}>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:24}}>
+        <div>
+          <div style={{display:'flex', alignItems:'center', gap:8, color:'var(--gray-500)', fontSize:12, marginBottom:4}}>
+            <span>ISO Certification 2026</span>
+            <span>/</span>
+            <span style={{fontWeight:600, color:'var(--gray-900)'}}>Internal Audit Checklist</span>
+          </div>
+          <div style={{fontSize:24, fontWeight:800, color:'var(--gray-900)', letterSpacing:'-0.5px'}}>Audit Fieldwork: {std.abbr}</div>
+          <div style={{fontSize:13, color:'var(--gray-500)', marginTop:4}}>{std.code} · {auditor}</div>
+        </div>
+        <div style={{display:'flex', gap:10}}>
+          <div style={{textAlign:'right'}}>
+            <div style={{fontSize:11, color:'var(--gray-400)', fontWeight:700, textTransform:'uppercase'}}>Audit Date</div>
+            <input type="date" value={auditDate} onChange={e=>setAuditDate(e.target.value)} style={{border:'none', padding:0, fontSize:13, fontWeight:600, textAlign:'right', color:'var(--gray-700)', background:'transparent'}}/>
+          </div>
+          <a href="Dashboard.html" style={{padding:'8px 16px', borderRadius:6, border:'1px solid var(--gray-200)', color:'var(--gray-700)', textDecoration:'none', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', gap:6}}>
+            <span>←</span> Dashboard
+          </a>
+        </div>
+      </div>
+
+      {/* Bento Highlights */}
+      <div style={{display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:16, marginBottom:8}}>
+        {[
+          { label: 'Overall Compliance', value: `${pct}%`, color: 'var(--gray-900)', sub: 'Conformance Score' },
+          { label: 'Conform', value: stats.conform, color: '#059669', sub: 'Requirements Met' },
+          { label: 'Non-Conformity', value: stats.nc, color: '#E2001A', sub: 'Action Required' },
+          { label: 'Observations', value: stats.ofi, color: '#2563EB', sub: 'Opportunities for Imp.' },
+        ].map(kpi => (
+          <div key={kpi.label} style={{
+            background: '#fff', border: '1px solid var(--gray-200)', borderRadius: 'var(--radius-lg)',
+            padding: '16px 20px', transition: 'all 0.2s',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = '#d4d4d4'; e.currentTarget.style.background = '#f9fafb'; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--gray-200)'; e.currentTarget.style.background = '#fff'; }}
+          >
+            <div style={{fontSize:10, fontWeight:700, color:'var(--gray-500)', textTransform:'uppercase', letterSpacing:0.8, marginBottom:8}}>{kpi.label}</div>
+            <div style={{fontSize:28, fontWeight:800, color:kpi.color, lineHeight:1, letterSpacing:'-1px'}}>{kpi.value}</div>
+            <div style={{fontSize:11, color:'var(--gray-500)', marginTop:6, fontWeight:500}}>{kpi.sub}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* Metadata & Standard Selector */}
+    <div style={{background:'var(--gray-50)', borderBottom:'1px solid var(--gray-200)', padding:'12px 28px', display:'flex', gap:24, alignItems:'center'}}>
+      <div style={{display:'flex', gap:4}}>
+        {Object.entries(STD_META).map(([k,v])=>{
+          const sel=selectedStd===k;
+          return <button key={k} onClick={()=>setSelectedStd(k)} style={{
+            padding:'5px 12px', borderRadius:6, fontSize:12, fontWeight:700, 
+            border:`1px solid ${sel?v.color:'transparent'}`, 
+            background:sel?`${v.color}10`:'transparent', 
+            color:sel?v.color:'var(--gray-500)', 
+            cursor:'pointer', transition:'all .1s'
+          }}>{v.abbr}</button>;
+        })}
+      </div>
+      <div style={{height:20, width:1, background:'var(--gray-300)'}} />
+      <div style={{display:'flex', gap:16, alignItems:'center'}}>
+        <div style={{display:'flex', gap:8, alignItems:'center'}}>
+          <span style={{fontSize:11, fontWeight:700, color:'var(--gray-400)', textTransform:'uppercase'}}>Auditee</span>
+          <input value={auditee} onChange={e=>setAuditee(e.target.value)} placeholder="Dept/Owner" style={{border:'none', background:'transparent', padding:0, fontSize:12, fontWeight:600, width:140}}/>
+        </div>
+      </div>
+    </div>
+
+    {/* Progress bar */}
+    <div style={{background:'#fff',borderBottom:'1px solid var(--gray-200)',padding:'0 28px'}}>
+      <div style={{height:4,background:'var(--gray-200)'}}>
+        <div style={{height:'100%',width:`${pct}%`,background:std.color,transition:'width .3s',borderRadius:2}}/>
+      </div>
+    </div>
+
+    {/* Checklist */}
+    <div style={{padding:'20px 28px'}}>
+      {sections.map(section=>{
+        const sectionQs=questions.map((q,i)=>({...q,idx:i})).filter(q=>q.section===section);
+        const sNc=sectionQs.filter(q=>getResp(selectedStd,q.idx).finding==='nc').length;
+        return <div key={section} style={{marginBottom:20}}>
+          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10,padding:'8px 14px',background:sNc>0?'#FFF1F2':'var(--gray-100)',borderRadius:8,borderLeft:`3px solid ${sNc>0?'var(--red)':std.color}`}}>
+            <span style={{fontWeight:700,fontSize:13,color:'var(--navy)'}}>{section}</span>
+            {sNc>0&&<span style={{fontSize:11,color:'var(--red)',fontWeight:700}}>⚠ {sNc} NC{sNc>1?'s':''}</span>}
+          </div>
+          <div style={{display:'flex',flexDirection:'column',gap:6}}>
+            {sectionQs.map(({question,clause,method,evidenceRef,idx})=>{
+              const resp=getResp(selectedStd,idx);
+              const f=FINDINGS[resp.finding];
+              const isNC=resp.finding==='nc';
+              return <div key={idx} style={{background:'#fff',borderRadius:8,border:`1px solid ${isNC?'#FECDCD':'var(--gray-200)'}`,overflow:'hidden',boxShadow:'var(--shadow)'}}>
+                <div style={{display:'grid',gridTemplateColumns:'1fr auto',gap:10,padding:'12px 14px'}}>
+                  <div>
+                    <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:6}}>
+                      <span style={{fontFamily:'var(--mono)',fontSize:10,color:std.color,fontWeight:700,background:`${std.color}18`,borderRadius:4,padding:'1px 6px'}}>{clause}</span>
+                      <span style={{fontSize:10,color:'var(--gray-500)',background:'var(--gray-100)',borderRadius:4,padding:'1px 6px'}}>{method}</span>
+                      <span style={{fontSize:10,color:'var(--gray-500)'}}>Evidence: <em>{evidenceRef}</em></span>
+                    </div>
+                    <div style={{fontWeight:500,fontSize:12,color:'var(--gray-900)',lineHeight:1.5}}>{question}</div>
+                  </div>
+                  <div style={{display:'flex',gap:4,flexDirection:'column',alignItems:'flex-end',flexShrink:0}}>
+                    <div style={{display:'flex',gap:3}}>
+                      {Object.entries(FINDINGS).map(([k,v])=>
+                        <button key={k} onClick={()=>setResp(selectedStd,idx,'finding',k)}
+                          style={{width:36,height:28,borderRadius:5,border:`2px solid ${resp.finding===k?v.color:'var(--gray-200)'}`,background:resp.finding===k?v.bg:'#fff',color:resp.finding===k?v.color:'var(--gray-400)',fontSize:11,fontWeight:700,cursor:'pointer',transition:'all .1s'}}>
+                          {v.icon}
+                        </button>
+                      )}
+                    </div>
+                    <span style={{background:f.bg,color:f.color,borderRadius:20,padding:'2px 8px',fontSize:10,fontWeight:700}}>{f.label}</span>
+                  </div>
+                </div>
+                {(resp.finding!=='not-checked'&&resp.finding!=='n-a')&&
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,padding:'8px 14px 12px',background:'var(--gray-50)',borderTop:'1px solid var(--gray-200)'}}>
+                    <div>
+                      <div style={{fontSize:10,fontWeight:700,color:'var(--gray-500)',marginBottom:3,textTransform:'uppercase'}}>Evidence Sampled</div>
+                      <input value={resp.evidence} onChange={e=>setResp(selectedStd,idx,'evidence',e.target.value)} placeholder="Document ref, record no., system..." style={{fontSize:11}}/>
+                    </div>
+                    <div>
+                      <div style={{fontSize:10,fontWeight:700,color:isNC?'var(--red)':'var(--gray-500)',marginBottom:3,textTransform:'uppercase'}}>{isNC?'⚠ Finding / Objective Evidence':'Notes'}</div>
+                      <input value={resp.notes} onChange={e=>setResp(selectedStd,idx,'notes',e.target.value)} placeholder={isNC?'Describe the nonconformity with objective evidence...':'Auditor notes...'} style={{fontSize:11,borderColor:isNC?'#FECDCD':'var(--gray-300)'}}/>
+                    </div>
+                  </div>
+                }
+              </div>;
+            })}
+          </div>
+        </div>;
+      })}
+
+      {/* Summary / Export hint */}
+      <div style={{background:'#fff',borderRadius:'var(--radius)',boxShadow:'var(--shadow)',padding:20,marginTop:8}}>
+        <div style={{fontWeight:700,fontSize:14,color:'var(--navy)',marginBottom:10}}>Audit Summary — {std.code}</div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:12,marginBottom:14}}>
+          {Object.entries(FINDINGS).map(([k,v])=><div key={k} style={{background:v.bg,borderRadius:8,padding:'10px',textAlign:'center'}}>
+            <div style={{fontSize:22,fontWeight:800,color:v.color}}>{stats[k]||0}</div>
+            <div style={{fontSize:11,color:v.color,fontWeight:600}}>{v.label}</div>
+          </div>)}
+        </div>
+        <div style={{display:'flex',gap:10,alignItems:'center'}}>
+          <div style={{fontSize:12,color:'var(--gray-600)'}}>Auditor: <b>{auditor}</b> · Auditee: <b>{auditee||'—'}</b> · Date: <b>{auditDate}</b> · Standard: <b style={{color:std.color}}>{std.abbr}</b></div>
+          <button onClick={()=>{
+            const ncs=questions.filter((_,i)=>getResp(selectedStd,i).finding==='nc');
+            if(ncs.length===0){alert('No NCs found — great audit result!');}
+            else{alert(`${ncs.length} NC(s) found:\n\n${ncs.map((q,i)=>`${i+1}. [${q.clause}] ${q.question.substring(0,80)}...\nEvidence: ${getResp(selectedStd,questions.indexOf(q)).evidence||'None'}\nNotes: ${getResp(selectedStd,questions.indexOf(q)).notes||'None'}`).join('\n\n')}`);}
+          }} style={{marginLeft:'auto',padding:'7px 14px',borderRadius:6,background:'var(--navy)',color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer'}}>View NC Summary</button>
+          <button onClick={()=>{if(confirm(`Reset all responses for ${std.abbr}?`)){const newR={...responses};questions.forEach((_,i)=>delete newR[getKey(selectedStd,i)]);setResponses(newR);}}} style={{padding:'7px 14px',borderRadius:6,border:'1px solid var(--gray-300)',color:'var(--gray-600)',fontSize:12,fontWeight:600,cursor:'pointer'}}>Reset {std.abbr}</button>
+        </div>
+      </div>
+    </div>
+
+    <div style={{padding:'12px 28px',borderTop:'1px solid var(--gray-200)',display:'flex',gap:16}}>
+      <a href="Dashboard.html" style={{fontSize:12,color:'var(--gray-600)',textDecoration:'none',fontWeight:500}}>← Dashboard</a>
+      <a href="NCR Tracker.html" style={{fontSize:12,color:'#2563EB',textDecoration:'none',fontWeight:500}}>NCR Tracker</a>
+      <a href="Legal Register.html" style={{fontSize:12,color:'#2563EB',textDecoration:'none',fontWeight:500}}>Legal Register</a>
+    </div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script></body></html>

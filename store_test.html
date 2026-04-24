@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GRCStore Integrity & Unit Tests</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 40px; background: #f8f9fa; color: #333; }
+        .test-card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 24px; margin-bottom: 20px; border: 1px solid #e9ecef; }
+        h1 { font-size: 24px; margin-bottom: 24px; color: #1e293b; }
+        .status { font-weight: 700; padding: 4px 10px; border-radius: 4px; font-size: 13px; }
+        .pass { background: #dcfce7; color: #16a34a; }
+        .fail { background: #fee2e2; color: #dc2626; }
+        .result-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f3f5; }
+        .details { font-family: monospace; font-size: 12px; color: #64748b; margin-top: 8px; background: #f8fafc; padding: 10px; border-radius: 6px; }
+    </style>
+</head>
+<body>
+    <h1>GRCStore Integrity & Unit Tests</h1>
+    
+    <div id="results"></div>
+
+    <script src="store.js"></script>
+    <script>
+        const resultsDiv = document.getElementById('results');
+
+        function logTest(name, passed, details = '') {
+            const card = document.createElement('div');
+            card.className = 'test-card';
+            card.innerHTML = `
+                <div class="result-item">
+                    <span style="font-weight: 600;">${name}</span>
+                    <span class="status ${passed ? 'pass' : 'fail'}">${passed ? 'PASSED' : 'FAILED'}</span>
+                </div>
+                ${details ? `<div class="details">${details}</div>` : ''}
+            `;
+            resultsDiv.appendChild(card);
+        }
+
+        async function runTests() {
+            try {
+                // Test 1: Store Initialization
+                const store = GRCStore.get();
+                logTest('Store Initialization', !!store, `Store version: ${store.version || 'unknown'}`);
+
+                // Test 2: Integrity Validation
+                const integrity = GRCStore.validateIntegrity();
+                const integrityPassed = integrity.consistency === 100;
+                logTest('Data Integrity Validation', integrityPassed, JSON.stringify(integrity, null, 2));
+
+                // Test 3: Standard Retrieval
+                const isms = GRCStore.getStandard('iso27001');
+                logTest('Standard Retrieval (ISO 27001)', !!isms && isms.abbr === 'ISMS');
+
+                // Test 4: Milestone Updates
+                const milestones = GRCStore.getMilestones('iso27001');
+                if (milestones.length > 0) {
+                    const originalStatus = milestones[0].status;
+                    const testStatus = originalStatus === 'done' ? 'in-progress' : 'done';
+                    GRCStore.updateMilestone('iso27001', milestones[0].id, { status: testStatus });
+                    const updated = GRCStore.getMilestones('iso27001')[0];
+                    logTest('Milestone Update Logic', updated.status === testStatus);
+                    // Revert
+                    GRCStore.updateMilestone('iso27001', milestones[0].id, { status: originalStatus });
+                }
+
+                // Test 5: Evidence & NCR Relationship
+                const newNCR = {
+                    standardId: 'iso27001',
+                    clauseRef: 'Test Clause',
+                    severity: 'Minor',
+                    finding: 'Unit test finding',
+                    status: 'open'
+                };
+                GRCStore.upsertNCR(newNCR);
+                const ncrs = GRCStore.getNCRs({ standardId: 'iso27001' });
+                const addedNCR = ncrs.find(n => n.finding === 'Unit test finding');
+                logTest('NCR Upsert Logic', !!addedNCR);
+                
+                if (addedNCR) {
+                    GRCStore.deleteNCR(addedNCR.id);
+                    const ncrsAfter = GRCStore.getNCRs({ standardId: 'iso27001' });
+                    logTest('NCR Delete & Cascade Logic', !ncrsAfter.find(n => n.id === addedNCR.id));
+                }
+
+                // Test 6: Cross-Module Referral
+                const stats = GRCStore.getDataStats();
+                logTest('Stats Aggregation Engine', !!stats && typeof stats.milestones === 'object');
+
+            } catch (err) {
+                logTest('Test Suite Execution', false, err.message + '\n' + err.stack);
+            }
+        }
+
+        runTests();
+    </script>
+</body>
+</html>

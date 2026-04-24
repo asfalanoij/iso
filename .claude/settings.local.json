@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -lh *.html)",
+      "Bash(open \"/Users/j42w2l065l/Library/CloudStorage/OneDrive-TelekomunikasiIndonesiaInternational/Apps/IT GRC/Evidence Register.html\")"
+    ]
+  }
+}
