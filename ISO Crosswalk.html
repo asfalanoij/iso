@@ -402,6 +402,262 @@ function DeltaTab() {
   );
 }
 
+// ─── HS Evolution Sankey (3-layer: Standard → HS clause → Origin) ─────────
+// Locked left-column order requested by Telin: ISMS, PIMS, ITSMS, BCMS, OHSMS, ABMS, EnMS
+const SANKEY_LEFT_ORDER = [
+  { family: 'ISMS',  stdId: 'iso27001',     code: 'ISO/IEC 27001:2022',  hsBucket: '2022 HS' },
+  { family: 'PIMS',  stdId: 'iso27701',     code: 'ISO/IEC 27701:2019',  hsBucket: 'Extension' },
+  { family: 'ITSMS', stdId: 'iso20000_1',   code: 'ISO/IEC 20000-1:2018', hsBucket: '2012 HLS' },
+  { family: 'BCMS',  stdId: 'iso22301',     code: 'ISO 22301:2019',      hsBucket: '2012 HLS' },
+  { family: 'OHSMS', stdId: 'iso45001',     code: 'ISO 45001:2018',      hsBucket: '2012 HLS' },
+  { family: 'ABMS',  stdId: 'iso37001_2025', code: 'ISO 37001:2025 (was 2016)', hsBucket: '2022 HS' },
+  { family: 'EnMS',  stdId: 'iso50001',     code: 'ISO 50001:2018',      hsBucket: '2012 HLS' },
+];
+
+const HS_CLAUSES_ORDER = [
+  { id: '4',  title: 'Context' },
+  { id: '5',  title: 'Leadership' },
+  { id: '6',  title: 'Planning' },
+  { id: '7',  title: 'Support' },
+  { id: '8',  title: 'Operation' },
+  { id: '9',  title: 'Performance' },
+  { id: '10', title: 'Improvement' },
+];
+
+const ORIGIN_BUCKETS_ORDER = [
+  { id: 'spine_2022', label: 'HS spine · 2022 HS', color: '#2563EB' },
+  { id: 'spine_2012', label: 'HS spine · 2012 HLS', color: '#64748B' },
+  { id: 'extension',  label: 'Standard-specific extension', color: '#9333EA' },
+];
+
+const FAMILY_COLORS = {
+  'ISMS':  '#2563EB',
+  'PIMS':  '#9333EA',
+  'ITSMS': '#0891B2',
+  'BCMS':  '#059669',
+  'OHSMS': '#EA580C',
+  'ABMS':  '#DC2626',
+  'EnMS':  '#CA8A04',
+};
+
+// HS spine subclause counts per clause (used as baseline weights)
+const HS_SPINE_2012 = { '4': 4, '5': 3, '6': 2, '7': 5, '8': 1, '9': 3, '10': 2 };
+const HS_SPINE_2022 = { '4': 4, '5': 3, '6': 3, '7': 5, '8': 1, '9': 3, '10': 2 };
+
+function HSEvolutionSankey() {
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState(null);
+  const [focusFamily, setFocusFamily] = useState(null);
+  const chartRef = useRef(null);
+
+  React.useEffect(() => {
+    fetch('hls_mapping.json', { cache: 'no-cache' })
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(setData)
+      .catch(e => setErr(String(e)));
+  }, []);
+
+  React.useEffect(() => {
+    if (!data || !chartRef.current || !window.Highcharts) return;
+
+    // Build node list (forced order via offset trick: prepend sortable numeric prefix)
+    const stdNodes = SANKEY_LEFT_ORDER.map((s, i) => ({
+      id: `S${i}|${s.family} · ${s.code}`,
+      column: 0,
+      color: FAMILY_COLORS[s.family],
+      offset: i * 40,
+    }));
+    const clauseNodes = HS_CLAUSES_ORDER.map((c, i) => ({
+      id: `C${i}|§${c.id} ${c.title}`,
+      column: 1,
+      color: '#1E293B',
+      offset: i * 40,
+    }));
+    const originNodes = ORIGIN_BUCKETS_ORDER.map((o, i) => ({
+      id: `O${i}|${o.label}`,
+      column: 2,
+      color: o.color,
+      offset: i * 40,
+    }));
+
+    // Build flows
+    const links = [];
+    SANKEY_LEFT_ORDER.forEach((s, si) => {
+      const sNode = stdNodes[si].id;
+      const std = data.standards.find(x => x.id === s.stdId);
+      if (!std) return;
+      // For PIMS (extension), inherit 2022 HS spine via 27001 base; flag as Extension origin in addition
+      const usesNewHS = s.hsBucket === '2022 HS' || s.hsBucket === 'Extension';
+      const spine = usesNewHS ? HS_SPINE_2022 : HS_SPINE_2012;
+
+      // Count extensions per HS clause from standard.extensions_beyond_hs[]
+      const extByClause = {};
+      (std.extensions_beyond_hs || []).forEach(ext => {
+        const top = String(ext.ref).split('.')[0];
+        if (HS_SPINE_2022[top]) extByClause[top] = (extByClause[top] || 0) + 1;
+      });
+
+      HS_CLAUSES_ORDER.forEach((c, ci) => {
+        const spineCount = spine[c.id] || 0;
+        const extCount = extByClause[c.id] || 0;
+        const total = spineCount + extCount;
+        if (total === 0) return;
+        const cNode = clauseNodes[ci].id;
+        // Standard → Clause (sum)
+        links.push({
+          from: sNode, to: cNode, weight: total,
+          custom: { family: s.family, code: s.code, clauseTitle: c.title, spineCount, extCount, hsBucket: s.hsBucket }
+        });
+        // Clause → Origin buckets
+        if (spineCount > 0) {
+          const originId = usesNewHS ? originNodes[0].id : originNodes[1].id;
+          links.push({ from: cNode, to: originId, weight: spineCount, custom: { family: s.family, kind: 'spine' } });
+        }
+        if (extCount > 0) {
+          links.push({ from: cNode, to: originNodes[2].id, weight: extCount, custom: { family: s.family, kind: 'extension' } });
+        }
+      });
+    });
+
+    // Filter by focused family
+    const filteredLinks = focusFamily
+      ? links.filter(l => l.custom?.family === focusFamily)
+      : links;
+
+    chartRef.current.innerHTML = '';
+    try {
+      window.Highcharts.chart(chartRef.current, {
+        chart: { type: 'sankey', height: 620, backgroundColor: 'transparent', style: { fontFamily: 'Inter, system-ui, sans-serif' } },
+        title: { text: null },
+        credits: { enabled: false },
+        accessibility: { enabled: false },
+        tooltip: {
+          headerFormat: '',
+          nodeFormat: '<b>{point.name}</b><br/>Total: {point.sum}',
+          pointFormatter: function () {
+            const c = this.options.custom || {};
+            const a = (this.from || '').split('|')[1] || this.from;
+            const b = (this.to || '').split('|')[1] || this.to;
+            if (c.spineCount !== undefined) {
+              return `<b>${a} → ${b}</b><br/>` +
+                `Subclauses: ${this.weight}<br/>` +
+                `&nbsp;&nbsp;HS spine: ${c.spineCount} (${c.hsBucket})<br/>` +
+                `&nbsp;&nbsp;Standard-specific extensions: ${c.extCount}`;
+            }
+            return `<b>${a} → ${b}</b><br/>${this.weight} subclauses (${c.kind || ''})`;
+          }
+        },
+        plotOptions: {
+          sankey: {
+            nodePadding: 14,
+            nodeWidth: 18,
+            curveFactor: 0.5,
+            linkOpacity: 0.45,
+            states: { hover: { linkOpacity: 0.85 } },
+            dataLabels: {
+              enabled: true,
+              style: { fontSize: '11px', fontWeight: '600', textOutline: 'none', color: '#1E293B' },
+              formatter: function () { return (this.point.name || '').split('|')[1] || this.point.name; }
+            }
+          }
+        },
+        series: [{
+          keys: ['from', 'to', 'weight'],
+          data: filteredLinks,
+          nodes: [...stdNodes, ...clauseNodes, ...originNodes],
+          name: 'HS evolution flow'
+        }]
+      });
+    } catch (e) {
+      chartRef.current.innerHTML = `<div style="color:#DC2626;padding:20px">Highcharts error: ${e.message}</div>`;
+    }
+  }, [data, focusFamily]);
+
+  if (err) return <div style={{ padding: 20, color: '#DC2626' }}>Failed to load hls_mapping.json: {err}</div>;
+  if (!data) return <div style={{ padding: 20, color: 'var(--gray-600)' }}>Loading…</div>;
+
+  // Auto callouts derived from data
+  const onHS2022 = SANKEY_LEFT_ORDER.filter(s => s.hsBucket === '2022 HS').length;
+  const onHLS2012 = SANKEY_LEFT_ORDER.filter(s => s.hsBucket === '2012 HLS').length;
+  const ext = SANKEY_LEFT_ORDER.filter(s => s.hsBucket === 'Extension').length;
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 8, border: '1px solid var(--gray-200)', padding: 20 }}>
+      {/* Header + legend */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 12 }}>
+        <div>
+          <h3 style={{ margin: 0, color: 'var(--navy)', fontSize: 17 }}>Harmonized Structure evolution — 7 standards in scope</h3>
+          <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--gray-600)', maxWidth: 720, lineHeight: 1.5 }}>
+            Read left-to-right: each standard contributes subclauses to the seven HS clauses (§4–§10), which then trace back to either the 2012 HLS spine, the 2022 HS spine, or that standard's own extensions. Locked vertical order on the left.
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 12, fontSize: 11, alignItems: 'center', flexWrap: 'wrap' }}>
+          {ORIGIN_BUCKETS_ORDER.map(o => (
+            <span key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ width: 12, height: 12, background: o.color, borderRadius: 3, opacity: 0.6, display: 'inline-block' }} />{o.label}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Family focus chips */}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+        <button onClick={() => setFocusFamily(null)} style={{ padding: '5px 12px', borderRadius: 6, fontSize: 11, fontWeight: 700, border: `1px solid var(--gray-300)`, background: !focusFamily ? 'var(--navy)' : '#fff', color: !focusFamily ? '#fff' : 'var(--gray-700)' }}>All standards</button>
+        {SANKEY_LEFT_ORDER.map(s => {
+          const active = focusFamily === s.family;
+          return (
+            <button key={s.family} onClick={() => setFocusFamily(active ? null : s.family)} style={{ padding: '5px 12px', borderRadius: 6, fontSize: 11, fontWeight: 700, border: `1px solid ${active ? FAMILY_COLORS[s.family] : 'var(--gray-300)'}`, background: active ? FAMILY_COLORS[s.family] : '#fff', color: active ? '#fff' : FAMILY_COLORS[s.family] }}>
+              {s.family}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Chart */}
+      <div ref={chartRef} style={{ minHeight: 620 }} />
+
+      {/* Auto callouts */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginTop: 18 }}>
+        <div style={{ padding: 14, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8 }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#2563EB' }}>{onHS2022}</div>
+          <div style={{ fontSize: 12, color: '#1E40AF', fontWeight: 600 }}>on 2022 HS</div>
+          <div style={{ fontSize: 11, color: 'var(--gray-600)', marginTop: 4 }}>Modern spine — easiest to integrate first</div>
+        </div>
+        <div style={{ padding: 14, background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 8 }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#475569' }}>{onHLS2012}</div>
+          <div style={{ fontSize: 12, color: '#334155', fontWeight: 600 }}>on 2012 HLS</div>
+          <div style={{ fontSize: 11, color: 'var(--gray-600)', marginTop: 4 }}>Awaiting Annex SL revision; expect 6.3 + 10.x changes</div>
+        </div>
+        <div style={{ padding: 14, background: '#FAF5FF', border: '1px solid #E9D5FF', borderRadius: 8 }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#9333EA' }}>{ext}</div>
+          <div style={{ fontSize: 12, color: '#6B21A8', fontWeight: 600 }}>Extension</div>
+          <div style={{ fontSize: 11, color: 'var(--gray-600)', marginTop: 4 }}>27701 inherits 27001's HS revision; not standalone</div>
+        </div>
+        <div style={{ padding: 14, background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8 }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: '#DC2626' }}>2027-02-28</div>
+          <div style={{ fontSize: 12, color: '#991B1B', fontWeight: 600 }}>ABMS transition deadline</div>
+          <div style={{ fontSize: 11, color: 'var(--gray-600)', marginTop: 4 }}>ISO 37001:2016 → 2025 (2022 HS). DNV / ANSI confirmed.</div>
+        </div>
+      </div>
+
+      {/* Annex KPI strip */}
+      <div style={{ marginTop: 16, padding: '12px 14px', background: '#F1F5F9', borderRadius: 8, fontSize: 12, color: 'var(--gray-700)', lineHeight: 1.6 }}>
+        <strong>Annex burden (excluded from sankey weights to keep clauses readable):</strong>{' '}
+        ISO/IEC 27001:2022 — 93 controls / 4 themes ·{' '}
+        ISO/IEC 27701:2019 — privacy controls layered on 27002 (Annex F mapping) ·{' '}
+        ISO/IEC 20000-1:2018 — no normative annex; clause 8 carries the load (six discipline subclauses 8.2–8.7) ·{' '}
+        ISO 37001 — control measures embedded in clause 8 ·{' '}
+        Others — no normative annex.
+      </div>
+
+      {/* Number-collision warning */}
+      <div style={{ marginTop: 10, padding: '10px 14px', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 8, fontSize: 11.5, color: '#78350F', lineHeight: 1.5 }}>
+        ⚠ <strong>Number-collision watch:</strong> ISO 50001's §6.3 <em>Energy review</em> ≠ HS 2022's §6.3 <em>Planning of changes</em>. Same number, different intent. Always join on (standard_id, clause_id, semantic_tag), never clause number alone.
+      </div>
+    </div>
+  );
+}
+
 // ─── HS Mapping Tab (sourced from hls_mapping.json) ───────────────────────
 function HLSMappingTab() {
   const [data, setData] = useState(null);
@@ -685,6 +941,7 @@ function App() {
     { id: 'raw', label: 'Raw ISO Source' },
     { id: 'graph', label: 'Dependency Graph' },
     { id: 'hlsmap', label: 'HS Mapping (JSON)' },
+    { id: 'sankey', label: 'Sankey · HS Evolution' },
   ];
 
   return (
@@ -770,6 +1027,7 @@ function App() {
         {tab === 'raw' && <RawSourceTab />}
         {tab === 'graph' && <DependencyGraph highlightStd={highlightStd} />}
         {tab === 'hlsmap' && <HLSMappingTab />}
+        {tab === 'sankey' && <HSEvolutionSankey />}
       </div>
 
       {/* Nav */}

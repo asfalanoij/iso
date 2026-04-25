@@ -247,27 +247,22 @@
     },
 
     {
-      "id": "iso42001",
-      "code": "ISO/IEC 42001:2023",
-      "name": "AI Management System (AIMS) — Requirements",
-      "publication_date": "2023-12",
+      "id": "iso20000_1",
+      "code": "ISO/IEC 20000-1:2018",
+      "name": "IT Service Management System (ITSMS) — Service management system requirements",
+      "publication_date": "2018-09",
       "annex_sl_aligned": true,
-      "hs_revision_followed": "2022 HS",
+      "hs_revision_followed": "2012 HLS (Annex SL Appendix 2 of that era)",
       "extensions_beyond_hs": [
-        { "ref": "6.1.2", "title": "AI risk assessment" },
-        { "ref": "6.1.3", "title": "AI risk treatment" },
-        { "ref": "6.1.4", "title": "AI system impact assessment", "notes": "Unique to 42001 — assesses impact on individuals, groups, society." },
-        { "ref": "8.2", "title": "AI risk assessment (operational)" },
-        { "ref": "8.3", "title": "AI risk treatment (operational)" },
-        { "ref": "8.4", "title": "AI system impact assessment (operational)" }
+        { "ref": "8.2", "title": "Service portfolio", "notes": "ITSMS-specific. Covers 8.2.1 service delivery, 8.2.2 plan the services, 8.2.3 control of parties involved in the service lifecycle, 8.2.4 service catalogue management, 8.2.5 asset management, 8.2.6 configuration management." },
+        { "ref": "8.3", "title": "Relationship and agreement", "notes": "Covers 8.3.1 general, 8.3.2 business relationship management, 8.3.3 service level management, 8.3.4 supplier management." },
+        { "ref": "8.4", "title": "Supply and demand", "notes": "Covers 8.4.1 budgeting and accounting for services, 8.4.2 demand management, 8.4.3 capacity management." },
+        { "ref": "8.5", "title": "Service design, build and transition", "notes": "Covers 8.5.1 change management, 8.5.2 service design and transition, 8.5.3 release and deployment management." },
+        { "ref": "8.6", "title": "Resolution and fulfilment", "notes": "Covers 8.6.1 incident management, 8.6.2 service request management, 8.6.3 problem management." },
+        { "ref": "8.7", "title": "Service assurance", "notes": "Covers 8.7.1 service availability management, 8.7.2 service continuity management, 8.7.3 information security management." }
       ],
-      "annex_controls": {
-        "annex_A": { "title": "AI controls reference", "categories": 9, "controls": 38 },
-        "annex_B": { "title": "Implementation guidance for AI controls" },
-        "annex_C": { "title": "Potential AI-related organizational objectives and risk sources" },
-        "annex_D": { "title": "Use of AI management system across domains and sectors" }
-      },
-      "deviation_notes": "10.1/10.2 swapped per 2022 HS. Designed to be co-implementable with ISO/IEC 27001 (information security) and ISO/IEC 27701 (privacy)."
+      "deviation_notes": "Old 10.1/10.2 order (10.1 Nonconformity, 10.2 Continual improvement). Heaviest clause-8 extension of all 7 standards — ITSMS replaces the HS single subclause 8.1 'Operational planning and control' with six discipline-specific subclauses (8.2-8.7) covering the full ITIL-aligned service lifecycle. Co-implementable with ISO/IEC 27001 (information security) via 8.7.3.",
+      "amendment_status": "ISO/IEC 20000-1:2018/Amd 1:2020 added clarifications. Climate amendment (Feb 2024) applies; verify corrigendum status before audit."
     }
   ],
 
