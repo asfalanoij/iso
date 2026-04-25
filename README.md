@@ -1,4 +1,4 @@
-# Telin GRC Suite — ISO Certification Programme 2026
+# GRC Suite — ISO Certification Programme 2026
 Simulation - no real data included in this prototype
 
 A zero-dependency, local-first HTML/JS toolkit for managing readiness across **7 ISO programs** in the run-up to Q3 2026. Open any `.html` file in a modern browser — no build, no install, no backend.
