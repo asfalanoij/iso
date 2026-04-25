@@ -402,6 +402,134 @@ function DeltaTab() {
   );
 }
 
+// ─── HS Mapping Tab (sourced from hls_mapping.json) ───────────────────────
+function HLSMappingTab() {
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState(null);
+  const [openStd, setOpenStd] = useState(null);
+  React.useEffect(() => {
+    fetch('hls_mapping.json', { cache: 'no-cache' })
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(setData)
+      .catch(e => setErr(String(e)));
+  }, []);
+  if (err) return <div style={{ padding: 20, color: '#DC2626' }}>Failed to load hls_mapping.json: {err}<br /><span style={{ fontSize: 11, color: 'var(--gray-600)' }}>If you opened this from <code>file://</code>, browsers block fetch(). Use the GitHub Pages URL or run a local server.</span></div>;
+  if (!data) return <div style={{ padding: 20, color: 'var(--gray-600)' }}>Loading hls_mapping.json…</div>;
+
+  const renderSubclause = (sc, depth = 0) => (
+    <div key={sc.id} style={{ paddingLeft: depth * 14, borderLeft: depth ? '1px dashed var(--gray-200)' : 'none', marginLeft: depth ? 6 : 0 }}>
+      <div style={{ fontSize: 12, padding: '3px 0', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+        <strong style={{ fontFamily: 'var(--mono)', minWidth: 44, color: 'var(--red)', fontSize: 11 }}>{sc.id}</strong>
+        <div style={{ flex: 1 }}>
+          <span style={{ color: 'var(--gray-800)' }}>{sc.title}</span>
+          {sc.notes && <div style={{ fontSize: 10.5, color: '#92400E', background: '#FEF3C7', padding: '3px 6px', borderRadius: 3, marginTop: 3, lineHeight: 1.4 }}>⚠ {sc.notes}</div>}
+        </div>
+      </div>
+      {sc.children && sc.children.map(c => renderSubclause(c, depth + 1))}
+    </div>
+  );
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 20 }}>
+      {/* HS skeleton */}
+      <div style={{ padding: 20, background: '#fff', borderRadius: 8, border: '1px solid var(--gray-200)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+          <h3 style={{ margin: 0, color: 'var(--navy)', fontSize: 16 }}>Harmonized Structure skeleton</h3>
+          <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: 'var(--gray-500)' }}>v{data.metadata.version}</span>
+        </div>
+        <p style={{ fontSize: 11.5, color: 'var(--gray-600)', marginBottom: 14, lineHeight: 1.5 }}>{data.harmonized_structure.version_in_use_for_skeleton}</p>
+        {data.harmonized_structure.clauses.filter(c => c.subclauses).map(c => (
+          <div key={c.id} style={{ marginBottom: 14, paddingBottom: 10, borderBottom: '1px solid var(--gray-100)' }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--navy)', marginBottom: 6 }}>§{c.id} {c.title}</div>
+            {c.subclauses.map(sc => renderSubclause(sc))}
+          </div>
+        ))}
+      </div>
+
+      {/* Standards mapping */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ padding: '12px 16px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, fontSize: 12, color: '#78350F', lineHeight: 1.5 }}>
+          <strong>Mock-up.</strong> Title-and-structure level only — reconstructed from secondary sources (BSI / DNV / DQS / NQA / SGS / ANSI / Advisera / PECB / Amtivo). Final crosswalk validation: <strong>{data.validation_authority.split('.')[1]?.trim() || 'accredited certification body'}</strong>.
+        </div>
+        {data.standards.map(s => {
+          const open = openStd === s.id;
+          return (
+            <div key={s.id} style={{ background: '#fff', borderRadius: 8, border: '1px solid var(--gray-200)', overflow: 'hidden' }}>
+              <button onClick={() => setOpenStd(open ? null : s.id)} style={{ width: '100%', padding: '14px 16px', textAlign: 'left', background: open ? '#F8FAFC' : '#fff', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--navy)' }}>{s.code}</div>
+                  <div style={{ fontSize: 11, color: 'var(--gray-600)', marginTop: 2 }}>{s.name}</div>
+                  <div style={{ fontSize: 10, fontFamily: 'var(--mono)', color: '#7C3AED', marginTop: 4 }}>{s.hs_revision_followed}</div>
+                </div>
+                <span style={{ fontSize: 18, color: 'var(--gray-400)' }}>{open ? '−' : '+'}</span>
+              </button>
+              {open && (
+                <div style={{ padding: '0 16px 16px', borderTop: '1px solid var(--gray-100)' }}>
+                  {s.deviation_notes && (
+                    <div style={{ fontSize: 11.5, color: '#92400E', background: '#FEF3C7', padding: 8, borderRadius: 4, margin: '12px 0', lineHeight: 1.5 }}>
+                      <strong>Deviation:</strong> {s.deviation_notes}
+                    </div>
+                  )}
+                  {s.extensions_beyond_hs && s.extensions_beyond_hs.length > 0 && (
+                    <div style={{ marginTop: 8 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--gray-700)', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 }}>Extensions beyond HS</div>
+                      {s.extensions_beyond_hs.map(ext => (
+                        <div key={ext.ref} style={{ fontSize: 11.5, padding: '4px 0', borderBottom: '1px dashed var(--gray-200)', display: 'flex', gap: 8 }}>
+                          <strong style={{ fontFamily: 'var(--mono)', minWidth: 44, color: 'var(--red)' }}>§{ext.ref}</strong>
+                          <div style={{ flex: 1 }}>
+                            <span>{ext.title}</span>
+                            {ext.notes && <div style={{ fontSize: 10.5, color: '#92400E', marginTop: 2 }}>⚠ {ext.notes}</div>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {s.annex_controls && s.annex_controls.themes && (
+                    <div style={{ marginTop: 14, padding: 10, background: '#F1F5F9', borderRadius: 6 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--navy)', marginBottom: 6 }}>{s.annex_controls.title} — {s.annex_controls.total_controls} controls</div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {s.annex_controls.themes.map(t => (
+                          <span key={t.id} style={{ fontSize: 10.5, padding: '3px 7px', background: '#fff', border: '1px solid var(--gray-300)', borderRadius: 4, fontFamily: 'var(--mono)' }}>{t.id} · {t.title} ({t.count})</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Methodology + sources collapsible */}
+        <details style={{ background: '#fff', borderRadius: 8, border: '1px solid var(--gray-200)', padding: '12px 16px' }}>
+          <summary style={{ cursor: 'pointer', fontSize: 13, fontWeight: 700, color: 'var(--navy)' }}>Methodology &amp; sources</summary>
+          <div style={{ marginTop: 12, fontSize: 12, color: 'var(--gray-700)', lineHeight: 1.55 }}>
+            <p style={{ marginBottom: 10 }}>{data.methodology.intro}</p>
+            <ol style={{ paddingLeft: 20, marginBottom: 10 }}>
+              {data.methodology.steps.map(st => <li key={st.step} style={{ marginBottom: 6 }}><strong>{st.name}.</strong> {st.detail}</li>)}
+            </ol>
+            <p style={{ marginBottom: 10, padding: 8, background: '#F1F5F9', borderRadius: 4, fontSize: 11.5 }}><strong>Validation path:</strong> {data.methodology.validation_path}</p>
+            <div style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--gray-700)', textTransform: 'uppercase', letterSpacing: 0.6, margin: '14px 0 6px' }}>Sources ({data.sources.length})</div>
+            <ul style={{ paddingLeft: 18, marginBottom: 10 }}>
+              {data.sources.map(src => (
+                <li key={src.id} style={{ fontSize: 11, marginBottom: 3 }}>
+                  <a href={src.url} target="_blank" rel="noopener noreferrer" style={{ color: '#2563EB' }}>{src.id}</a>
+                  {src.status && <span style={{ fontSize: 10, color: '#DC2626', marginLeft: 6 }}>[{src.status}]</span>}
+                  {src.claims && <span style={{ color: 'var(--gray-600)' }}> — {src.claims.join('; ')}</span>}
+                </li>
+              ))}
+            </ul>
+            <div style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--gray-700)', textTransform: 'uppercase', letterSpacing: 0.6, margin: '14px 0 6px' }}>Caveats</div>
+            <ul style={{ paddingLeft: 18 }}>
+              {data.caveats.map((c, i) => <li key={i} style={{ fontSize: 11, marginBottom: 4, color: 'var(--gray-700)' }}>{c}</li>)}
+            </ul>
+          </div>
+        </details>
+      </div>
+    </div>
+  );
+}
+
 // ─── Raw ISO Source Tab ────────────────────────────────────────────────────
 function RawSourceTab() {
   const rawData = window.RAW_ISO_DATA;
@@ -556,6 +684,7 @@ function App() {
     { id: 'delta', label: '37001 Delta' },
     { id: 'raw', label: 'Raw ISO Source' },
     { id: 'graph', label: 'Dependency Graph' },
+    { id: 'hlsmap', label: 'HS Mapping (JSON)' },
   ];
 
   return (
@@ -640,6 +769,7 @@ function App() {
         {tab === 'delta' && <DeltaTab />}
         {tab === 'raw' && <RawSourceTab />}
         {tab === 'graph' && <DependencyGraph highlightStd={highlightStd} />}
+        {tab === 'hlsmap' && <HLSMappingTab />}
       </div>
 
       {/* Nav */}
