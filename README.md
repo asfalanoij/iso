@@ -10,6 +10,8 @@ A zero-dependency, local-first HTML/JS toolkit for managing readiness across **7
 ---
 
 ## Modules
+<img width="941" height="824" alt="Screenshot 2026-04-25 at 14 54 27" src="https://github.com/user-attachments/assets/c8543b87-af3d-4295-a2fc-5862ed9716b5" />
+<img width="1710" height="879" alt="Screenshot 2026-04-25 at 14 54 08" src="https://github.com/user-attachments/assets/5697644c-7125-42ae-b22e-14fd2605dbab" />
 
 | Page | Purpose |
 |------|---------|
