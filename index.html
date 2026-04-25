@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'" />
+<meta http-equiv="X-Content-Type-Options" content="nosniff" />
+<meta name="referrer" content="strict-origin-when-cross-origin" />
+<meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Telin GRC Suite — ISO Certification Programme 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0b0d12;
+    --panel: #11141b;
+    --panel-2: #161a23;
+    --border: #232938;
+    --fg: #e7ecf3;
+    --muted: #8b94a7;
+    --accent: #7aa2ff;
+    --accent-2: #9d7dff;
+    --good: #4ade80;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font-family: 'Plus Jakarta Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 56px 24px 80px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 40px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand .dot { width: 10px; height: 10px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 0 18px var(--accent); }
+  .brand h1 { font-size: 18px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  .brand .tag { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 2px; }
+  nav a { color: var(--muted); text-decoration: none; font-size: 13px; margin-left: 18px; transition: color .15s; }
+  nav a:hover { color: var(--fg); }
+  .hero { margin: 24px 0 48px; }
+  .hero h2 { font-size: clamp(28px, 4vw, 44px); line-height: 1.1; margin: 0 0 14px; letter-spacing: -0.02em; font-weight: 800; }
+  .hero h2 span { background: linear-gradient(135deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero p { color: var(--muted); font-size: 16px; max-width: 620px; line-height: 1.55; margin: 0; }
+  .badges { margin-top: 18px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .badge { font-family: 'DM Mono', monospace; font-size: 11px; padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; color: var(--muted); }
+  .badge.good { color: var(--good); border-color: rgba(74, 222, 128, 0.3); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+  .card { display: block; padding: 22px; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; text-decoration: none; color: inherit; transition: transform .12s, border-color .12s, background .12s; }
+  .card:hover { transform: translateY(-2px); border-color: var(--accent); background: var(--panel-2); }
+  .card h3 { margin: 0 0 6px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .card p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
+  .card .icon { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--accent); margin-bottom: 12px; display: block; }
+  footer { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+  footer a { color: var(--muted); text-decoration: none; }
+  footer a:hover { color: var(--fg); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <span class="dot"></span>
+      <div>
+        <h1>Telin GRC Suite</h1>
+        <div class="tag">ISO Certification Programme · Q3 2026</div>
+      </div>
+    </div>
+    <nav>
+      <a href="https://github.com/asfalanoij/iso" target="_blank" rel="noopener">GitHub</a>
+      <a href="Architecture.md">Architecture</a>
+      <a href="SECURITY.md">Security</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h2>Readiness across <span>7 ISO standards</span>, in one local-first toolkit.</h2>
+    <p>Zero-dependency HTML/JS framework for evidence, risk, NCR, legal, and crosswalk management. Fully client-side via <code>localStorage</code> with a chain-of-custody audit log on every transition.</p>
+    <div class="badges">
+      <span class="badge good">DevSecOps baseline</span>
+      <span class="badge">React 18</span>
+      <span class="badge">Highcharts 11</span>
+      <span class="badge">Chart.js 4</span>
+      <span class="badge">SRI + CSP</span>
+    </div>
+  </section>
+
+  <section class="grid">
+    <a class="card" href="Dashboard.html"><span class="icon">01 · DASHBOARD</span><h3>Executive Dashboard</h3><p>C-suite KPI overview with cross-program readiness metrics.</p></a>
+    <a class="card" href="ISO%20Crosswalk.html"><span class="icon">02 · CROSSWALK</span><h3>ISO Crosswalk</h3><p>Multi-standard control mapping: dependency wheel + sankey.</p></a>
+    <a class="card" href="Audit%20Checklist.html"><span class="icon">03 · AUDIT</span><h3>Audit Checklist</h3><p>Walk-through audit prompts per standard and clause.</p></a>
+    <a class="card" href="Evidence%20Register.html"><span class="icon">04 · EVIDENCE</span><h3>Evidence Register</h3><p>5-state lifecycle: Draft → Review → Approval → Approved.</p></a>
+    <a class="card" href="NCR%20Tracker.html"><span class="icon">05 · NCR</span><h3>NCR Tracker</h3><p>Non-conformity register with corrective action workflow.</p></a>
+    <a class="card" href="Risk%20Register.html"><span class="icon">06 · RISK</span><h3>Risk Register</h3><p>Risk catalogue, treatment plans, residual scoring.</p></a>
+    <a class="card" href="Legal%20Register.html"><span class="icon">07 · LEGAL</span><h3>Legal Register</h3><p>Statutory and regulatory obligations across jurisdictions.</p></a>
+    <a class="card" href="Data%20Governance.html"><span class="icon">08 · DAMA</span><h3>Data Governance</h3><p>DAMA-DMBOK aligned governance and stewardship view.</p></a>
+  </section>
+
+  <footer>
+    <div>© asfalanoij · MIT License</div>
+    <div><a href="https://github.com/asfalanoij/iso/security/advisories/new">Report a vulnerability</a></div>
+  </footer>
+</div>
+</body>
+</html>
