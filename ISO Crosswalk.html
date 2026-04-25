@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://unpkg.com 'unsafe-inline' 'unsafe-eval'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com 'unsafe-inline' 'unsafe-eval'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'" />
 <meta http-equiv="X-Content-Type-Options" content="nosniff" />
 <meta name="referrer" content="strict-origin-when-cross-origin" />
 <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()" />
@@ -15,6 +15,8 @@
 <script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.0/highcharts.js" integrity="sha384-x5VMYdr3fISR+WXDIJzlWWbHe6kNKFZG/UHL0oBHwXup048fVMnx/GColN0OElKo" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.0/modules/sankey.js" integrity="sha384-7bYJUJPIkBo578ZuRPY4//HWLLoAyji2r4oVH6s/0C/FzLjtQp0PWCSCbU+Xswor" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.0/modules/dependency-wheel.js" integrity="sha384-ZIIjjzVkGUHkU+kCHO1JROFuGkfpIXeA6q0LPVUIk/evAtNhxhIhY5cZyoPxtGM6" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" integrity="sha384-fCAW/rDWORTbQXSiB7mOg0QtQ5c+r0f544y6XoKjuVva0nMBlCpNUjiFeG5iMdS3" crossorigin="anonymous"></script>
 <script src="crosswalk-data.js"></script>
 <script src="raw_iso_data.js"></script>
 <script src="store.js"></script>
@@ -402,6 +404,253 @@ function DeltaTab() {
   );
 }
 
+// ─── Crosswalk export helpers (CSV + A4 PDF) ──────────────────────────────
+const FOOTER_TEXT = 'ISO 2026 readiness  |  made by rudy.prasetiya@telin.net  |  April, 2026';
+
+function downloadBlob(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function csvEscape(v) {
+  if (v == null) return '';
+  const s = String(v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+function buildCrosswalkCSV(data) {
+  const rows = [];
+  rows.push(['standard_id', 'standard_code', 'standard_name', 'hs_revision', 'clause_or_extension_ref', 'title', 'kind', 'notes', 'deviation_summary'].map(csvEscape).join(','));
+  // HS skeleton rows
+  data.harmonized_structure.clauses.forEach(c => {
+    if (!c.subclauses) return;
+    c.subclauses.forEach(sc => {
+      rows.push(['_HS_SPINE', 'Harmonized Structure', data.harmonized_structure.version_in_use_for_skeleton, '2022 HS', sc.id, sc.title, 'hs_spine', sc.notes || '', ''].map(csvEscape).join(','));
+      if (sc.children) sc.children.forEach(ch => {
+        rows.push(['_HS_SPINE', 'Harmonized Structure', data.harmonized_structure.version_in_use_for_skeleton, '2022 HS', ch.id, ch.title, 'hs_spine_child', ch.notes || '', ''].map(csvEscape).join(','));
+      });
+    });
+  });
+  // Per-standard extensions
+  data.standards.forEach(s => {
+    (s.extensions_beyond_hs || []).forEach(ext => {
+      rows.push([s.id, s.code, s.name, s.hs_revision_followed, ext.ref, ext.title, 'extension', ext.notes || '', s.deviation_notes || ''].map(csvEscape).join(','));
+    });
+    if (s.annex_controls && s.annex_controls.themes) {
+      s.annex_controls.themes.forEach(t => {
+        rows.push([s.id, s.code, s.name, s.hs_revision_followed, t.id, `${t.title} (${t.count} controls)`, 'annex_theme', '', s.deviation_notes || ''].map(csvEscape).join(','));
+      });
+    }
+  });
+  return rows.join('\n');
+}
+
+function buildCrosswalkPDF(data) {
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    alert('PDF library failed to load. Check your network and CSP.');
+    return;
+  }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const M = 16;
+  let y;
+
+  const drawFooter = () => {
+    const total = doc.getNumberOfPages();
+    for (let i = 1; i <= total; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8); doc.setTextColor(120);
+      doc.setDrawColor(220); doc.line(M, pageH - 12, pageW - M, pageH - 12);
+      doc.text(FOOTER_TEXT, pageW / 2, pageH - 7, { align: 'center' });
+      doc.text(`Page ${i} / ${total}`, pageW - M, pageH - 7, { align: 'right' });
+    }
+  };
+
+  // Title page
+  doc.setFillColor(15, 23, 42); doc.rect(0, 0, pageW, 48, 'F');
+  doc.setTextColor(255); doc.setFontSize(20); doc.setFont('helvetica', 'bold');
+  doc.text('ISO Standards Crosswalk', M, 20);
+  doc.setFontSize(12); doc.setFont('helvetica', 'normal');
+  doc.text('Harmonized Structure mapping for 7 management system standards', M, 30);
+  doc.setFontSize(9); doc.setTextColor(200);
+  doc.text(`Generated ${data.metadata.generated}  ·  Spec v${data.metadata.version}`, M, 38);
+
+  doc.setTextColor(40); y = 58;
+  doc.setFontSize(10); doc.setFont('helvetica', 'bold');
+  doc.text('Scope', M, y); y += 5;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+  const scopeLines = doc.splitTextToSize(
+    'This document maps the seven ISO/IEC management system standards in scope of the Telin ISO Programme 2026 onto the Harmonized Structure (HS, formerly Annex SL Appendix 2). It captures HS revision adopted, standard-specific subclause extensions, and key deviation notes per standard. Use as a brainstorming aid; final clause-by-clause crosswalk validation is the responsibility of an accredited certification body (Intertek, BSI, DNV, TUEV, SGS, BV).',
+    pageW - 2 * M
+  );
+  doc.text(scopeLines, M, y); y += scopeLines.length * 4.5 + 4;
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+  doc.text('Disclaimer', M, y); y += 5;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+  const discLines = doc.splitTextToSize(
+    'MOCK-UP — Brainstorming simulation. No data from Telin is used. ISO Crosswalk content may vary across iterations. Title-and-structure level reconstructed from secondary authoritative summaries (BSI, DNV, DQS, NQA, SGS, ANSI, Advisera, PECB, Amtivo). Not a substitute for the normative text of the ISO standards (copyrighted; available via ISO Store / ANSI / BSI Knowledge).',
+    pageW - 2 * M
+  );
+  doc.text(discLines, M, y); y += discLines.length * 4.5 + 6;
+
+  // Summary table
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+  doc.text('Standards in scope', M, y); y += 3;
+  doc.autoTable({
+    startY: y + 2,
+    margin: { left: M, right: M, bottom: 16 },
+    head: [['#', 'Family', 'Code', 'HS revision', 'Extensions', 'Annex']],
+    body: data.standards.map((s, i) => [
+      i + 1,
+      ({iso27001:'ISMS', iso27701:'PIMS', iso20000_1:'ITSMS', iso22301:'BCMS', iso37001_2016:'ABMS', iso37001_2025:'ABMS', iso45001:'OHSMS', iso50001:'EnMS'}[s.id] || ''),
+      s.code,
+      (s.hs_revision_followed || '').slice(0, 32),
+      (s.extensions_beyond_hs || []).length,
+      s.annex_controls ? (s.annex_controls.total_controls ? `${s.annex_controls.total_controls} ctrls` : 'see annex') : '—',
+    ]),
+    styles: { fontSize: 8, cellPadding: 2 },
+    headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+  });
+
+  // HS skeleton page
+  doc.addPage();
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(15, 23, 42);
+  doc.text('Harmonized Structure skeleton', M, 18);
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(80);
+  doc.text(data.harmonized_structure.version_in_use_for_skeleton, M, 24);
+  const hsBody = [];
+  data.harmonized_structure.clauses.forEach(c => {
+    if (!c.subclauses) {
+      hsBody.push([{ content: `§${c.id} ${c.title}`, colSpan: 2, styles: { fontStyle: 'bold', fillColor: [241, 245, 249] } }, '']);
+    } else {
+      hsBody.push([{ content: `§${c.id} ${c.title}`, colSpan: 2, styles: { fontStyle: 'bold', fillColor: [241, 245, 249] } }, '']);
+      c.subclauses.forEach(sc => {
+        hsBody.push([sc.id, sc.title + (sc.notes ? `  ⚠ ${sc.notes}` : '')]);
+        if (sc.children) sc.children.forEach(ch => hsBody.push([`  ${ch.id}`, `  ${ch.title}`]));
+      });
+    }
+  });
+  doc.autoTable({
+    startY: 28,
+    margin: { left: M, right: M, bottom: 16 },
+    head: [['Ref', 'Title / Note']],
+    body: hsBody,
+    styles: { fontSize: 8, cellPadding: 1.8 },
+    headStyles: { fillColor: [15, 23, 42], textColor: 255 },
+    columnStyles: { 0: { cellWidth: 18, fontStyle: 'bold', textColor: [220, 38, 38] } },
+  });
+
+  // Per-standard one-pagers
+  data.standards.forEach(s => {
+    doc.addPage();
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(15, 23, 42);
+    doc.text(s.code, M, 18);
+    doc.setFontSize(10); doc.setFont('helvetica', 'normal'); doc.setTextColor(80);
+    const nameLines = doc.splitTextToSize(s.name, pageW - 2 * M);
+    doc.text(nameLines, M, 24); let yy = 24 + nameLines.length * 4.5 + 2;
+    doc.setFontSize(8); doc.setTextColor(124, 58, 237);
+    doc.text(`HS revision: ${s.hs_revision_followed}`, M, yy); yy += 4;
+    if (s.publication_date) { doc.setTextColor(80); doc.text(`Published: ${s.publication_date}`, M, yy); yy += 4; }
+    if (s.transition && s.transition.deadline_for_certified_organizations) {
+      doc.setTextColor(220, 38, 38);
+      doc.text(`Transition deadline: ${s.transition.deadline_for_certified_organizations}`, M, yy); yy += 5;
+    }
+    if (s.deviation_notes) {
+      doc.setTextColor(120, 53, 15); doc.setFontSize(8); doc.setFont('helvetica', 'bold');
+      doc.text('Deviation notes', M, yy + 2); yy += 6;
+      doc.setFont('helvetica', 'normal');
+      const dl = doc.splitTextToSize(s.deviation_notes, pageW - 2 * M);
+      doc.setFillColor(254, 243, 199);
+      doc.rect(M, yy - 3, pageW - 2 * M, dl.length * 4 + 4, 'F');
+      doc.text(dl, M + 2, yy); yy += dl.length * 4 + 4;
+    }
+    if (s.extensions_beyond_hs && s.extensions_beyond_hs.length) {
+      doc.autoTable({
+        startY: yy + 4,
+        margin: { left: M, right: M, bottom: 16 },
+        head: [['Ref', 'Extension subclause', 'Note']],
+        body: s.extensions_beyond_hs.map(e => [e.ref, e.title, e.notes || '']),
+        styles: { fontSize: 8, cellPadding: 1.8 },
+        headStyles: { fillColor: [37, 99, 235], textColor: 255 },
+        columnStyles: { 0: { cellWidth: 18, fontStyle: 'bold', textColor: [220, 38, 38] }, 2: { textColor: [120, 53, 15] } },
+      });
+      yy = doc.lastAutoTable.finalY + 4;
+    }
+    if (s.annex_controls) {
+      doc.setTextColor(15, 23, 42); doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+      doc.text('Annex controls', M, yy + 2); yy += 5;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(80);
+      const ann = s.annex_controls;
+      if (ann.themes) {
+        doc.autoTable({
+          startY: yy,
+          margin: { left: M, right: M, bottom: 16 },
+          head: [['Theme', 'Title', 'Count']],
+          body: ann.themes.map(t => [t.id, t.title, t.count]),
+          styles: { fontSize: 8, cellPadding: 1.8 },
+          headStyles: { fillColor: [88, 28, 135], textColor: 255 },
+        });
+      } else {
+        const annText = JSON.stringify(ann, null, 0).slice(0, 200);
+        const al = doc.splitTextToSize(annText, pageW - 2 * M);
+        doc.text(al, M, yy);
+      }
+    }
+  });
+
+  // Methodology + sources page
+  doc.addPage();
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(15, 23, 42);
+  doc.text('Methodology', M, 18);
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(60);
+  let my = 24;
+  const introLines = doc.splitTextToSize(data.methodology.intro, pageW - 2 * M);
+  doc.text(introLines, M, my); my += introLines.length * 4.5 + 3;
+  data.methodology.steps.forEach(st => {
+    doc.setFont('helvetica', 'bold'); doc.text(`${st.step}. ${st.name}`, M, my); my += 4;
+    doc.setFont('helvetica', 'normal');
+    const sl = doc.splitTextToSize(st.detail, pageW - 2 * M);
+    doc.text(sl, M, my); my += sl.length * 4 + 3;
+  });
+  doc.setFont('helvetica', 'bold'); doc.text('Validation path', M, my); my += 4;
+  doc.setFont('helvetica', 'normal');
+  const vp = doc.splitTextToSize(data.methodology.validation_path, pageW - 2 * M);
+  doc.text(vp, M, my); my += vp.length * 4 + 4;
+
+  doc.autoTable({
+    startY: my,
+    margin: { left: M, right: M, bottom: 16 },
+    head: [['Source', 'URL', 'Status / claims']],
+    body: data.sources.map(s => [s.id, s.url, (s.status ? `[${s.status}] ` : '') + ((s.claims || []).join('; ') || s.use || '')]),
+    styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak' },
+    headStyles: { fillColor: [15, 23, 42], textColor: 255, fontSize: 8 },
+    columnStyles: { 0: { cellWidth: 32, fontStyle: 'bold' }, 1: { cellWidth: 70, textColor: [37, 99, 235] }, 2: { cellWidth: 'auto' } },
+  });
+
+  // Caveats page
+  doc.addPage();
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(15, 23, 42);
+  doc.text('Caveats', M, 18);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(60);
+  let cy = 26;
+  data.caveats.forEach((c, i) => {
+    const cl = doc.splitTextToSize(`${i + 1}. ${c}`, pageW - 2 * M);
+    doc.text(cl, M, cy); cy += cl.length * 4.5 + 2;
+  });
+
+  drawFooter();
+  doc.save('iso-crosswalk-2026.pdf');
+}
+
 // ─── HS Evolution Sankey (3-layer: Standard → HS clause → Origin) ─────────
 // Locked left-column order requested by Telin: ISMS, PIMS, ITSMS, BCMS, OHSMS, ABMS, EnMS
 const SANKEY_LEFT_ORDER = [
@@ -598,6 +847,18 @@ function HSEvolutionSankey() {
             </span>
           ))}
         </div>
+      </div>
+
+      {/* Download bar */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12, padding: '10px 12px', background: '#F8FAFC', border: '1px solid var(--gray-200)', borderRadius: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--gray-700)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Export crosswalk:</span>
+        <button onClick={() => downloadBlob(buildCrosswalkCSV(data), 'iso-crosswalk-2026.csv', 'text/csv;charset=utf-8')} style={{ padding: '6px 12px', fontSize: 12, fontWeight: 700, background: '#fff', border: '1px solid #2563EB', color: '#2563EB', borderRadius: 6, cursor: 'pointer' }}>
+          ⬇ CSV
+        </button>
+        <button onClick={() => buildCrosswalkPDF(data)} style={{ padding: '6px 12px', fontSize: 12, fontWeight: 700, background: '#2563EB', border: '1px solid #2563EB', color: '#fff', borderRadius: 6, cursor: 'pointer' }}>
+          ⬇ PDF (A4)
+        </button>
+        <span style={{ fontSize: 10, color: 'var(--gray-500)', marginLeft: 'auto' }}>Footer: <code style={{ fontFamily: 'var(--mono)' }}>{FOOTER_TEXT}</code></span>
       </div>
 
       {/* Family focus chips */}
