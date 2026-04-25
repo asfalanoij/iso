@@ -3,3 +3,24 @@ Claude-Skills-Governance-Risk-and-Compliance/
 MASTER_ULTRAPLAN.md
 agents
 rules
+
+# Secrets / credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+credentials.json
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+
+# Build / cache
+node_modules/
+dist/
+.cache/
