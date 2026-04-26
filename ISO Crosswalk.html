@@ -769,25 +769,48 @@ function HSEvolutionSankey() {
 
     chartRef.current.innerHTML = '';
     try {
+      // Strip the sortable prefix ("S0|", "C0|", "O0|") from a node id
+      const stripPrefix = (id) => (id || '').split('|').slice(1).join('|') || id;
       window.Highcharts.chart(chartRef.current, {
-        chart: { type: 'sankey', height: 620, backgroundColor: 'transparent', style: { fontFamily: 'Inter, system-ui, sans-serif' } },
+        chart: { type: 'sankey', height: 920, backgroundColor: 'transparent', style: { fontFamily: 'Inter, system-ui, sans-serif' } },
         title: { text: null },
         credits: { enabled: false },
         accessibility: { enabled: false },
         tooltip: {
+          useHTML: true,
+          backgroundColor: '#ffffff',
+          borderColor: '#1E293B',
+          borderWidth: 1,
+          shadow: true,
+          padding: 10,
+          style: { fontSize: '12px', color: '#1E293B' },
           headerFormat: '',
-          nodeFormat: '<b>{point.name}</b><br/>Total: {point.sum}',
+          nodeFormatter: function () {
+            const label = stripPrefix(this.id || this.name);
+            return `<b>${label}</b><br/><span style="color:#64748B">Total flow: ${this.sum} subclauses</span>`;
+          },
           pointFormatter: function () {
             const c = this.options.custom || {};
-            const a = (this.from || '').split('|')[1] || this.from;
-            const b = (this.to || '').split('|')[1] || this.to;
+            const a = stripPrefix(this.from);
+            const b = stripPrefix(this.to);
+            // Standard → Clause flow (has spineCount + extCount)
             if (c.spineCount !== undefined) {
-              return `<b>${a} → ${b}</b><br/>` +
-                `Subclauses: ${this.weight}<br/>` +
-                `&nbsp;&nbsp;HS spine: ${c.spineCount} (${c.hsBucket})<br/>` +
-                `&nbsp;&nbsp;Standard-specific extensions: ${c.extCount}`;
+              const ext = c.extCount > 0
+                ? `<br/><span style="color:#9333EA">+ ${c.extCount} ${c.family}-specific extension${c.extCount === 1 ? '' : 's'}</span>`
+                : '';
+              return `<b>${c.code}</b> contributes <b>${this.weight}</b> subclause${this.weight === 1 ? '' : 's'} to <b>${b}</b>` +
+                `<br/><span style="color:#64748B">${c.spineCount} from the ${c.hsBucket} spine</span>${ext}`;
             }
-            return `<b>${a} → ${b}</b><br/>${this.weight} subclauses (${c.kind || ''})`;
+            // Clause → Origin flow (kind = 'spine' or 'extension')
+            if (c.kind === 'spine') {
+              return `<b>${a}</b> uses <b>${this.weight}</b> spine subclause${this.weight === 1 ? '' : 's'} from the <b>${b}</b>` +
+                `<br/><span style="color:#64748B">Inherited from the Harmonized Structure — common across many ISO standards.</span>`;
+            }
+            if (c.kind === 'extension') {
+              return `<b>${a}</b> adds <b>${this.weight}</b> ${c.family}-specific extension subclause${this.weight === 1 ? '' : 's'}` +
+                `<br/><span style="color:#64748B">Discipline-specific addition beyond the HS spine.</span>`;
+            }
+            return `<b>${a} → ${b}</b><br/>${this.weight}`;
           }
         },
         plotOptions: {
@@ -800,7 +823,12 @@ function HSEvolutionSankey() {
             dataLabels: {
               enabled: true,
               style: { fontSize: '11px', fontWeight: '600', textOutline: 'none', color: '#1E293B' },
-              formatter: function () { return (this.point.name || '').split('|')[1] || this.point.name; }
+              // Only label nodes; suppress the auto-generated "highcharts-XXX" link labels
+              formatter: function () {
+                if (!this.point.isNode) return null;
+                return stripPrefix(this.point.name);
+              },
+              nodeFormatter: function () { return stripPrefix(this.name); }
             }
           }
         },
@@ -869,7 +897,7 @@ function HSEvolutionSankey() {
       </div>
 
       {/* Chart */}
-      <div ref={chartRef} style={{ minHeight: 620 }} />
+      <div ref={chartRef} style={{ minHeight: 920 }} />
 
       {/* Auto callouts */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginTop: 18 }}>
