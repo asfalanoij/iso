@@ -17,9 +17,10 @@
 <script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.0/modules/dependency-wheel.js" integrity="sha384-ZIIjjzVkGUHkU+kCHO1JROFuGkfpIXeA6q0LPVUIk/evAtNhxhIhY5cZyoPxtGM6" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" integrity="sha384-fCAW/rDWORTbQXSiB7mOg0QtQ5c+r0f544y6XoKjuVva0nMBlCpNUjiFeG5iMdS3" crossorigin="anonymous"></script>
-<script src="crosswalk-data.js"></script>
-<script src="raw_iso_data.js"></script>
+<script src="data/crosswalk.js"></script>
+<script src="data/raw.js"></script>
 <script src="store.js"></script>
+<script src="data/iso.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -694,17 +695,10 @@ const HS_SPINE_2012 = { '4': 4, '5': 3, '6': 2, '7': 5, '8': 1, '9': 3, '10': 2 
 const HS_SPINE_2022 = { '4': 4, '5': 3, '6': 3, '7': 5, '8': 1, '9': 3, '10': 2 };
 
 function HSEvolutionSankey() {
-  const [data, setData] = useState(null);
-  const [err, setErr] = useState(null);
+  const data = window.ISO_DATA && window.ISO_DATA.hlsMapping;
+  const err = data ? null : 'window.ISO_DATA not loaded — ensure data/iso.js is included.';
   const [focusFamily, setFocusFamily] = useState(null);
   const chartRef = useRef(null);
-
-  React.useEffect(() => {
-    fetch('hls_mapping.json', { cache: 'no-cache' })
-      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(setData)
-      .catch(e => setErr(String(e)));
-  }, []);
 
   React.useEffect(() => {
     if (!data || !chartRef.current || !window.Highcharts) return;
@@ -822,7 +816,7 @@ function HSEvolutionSankey() {
     }
   }, [data, focusFamily]);
 
-  if (err) return <div style={{ padding: 20, color: '#DC2626' }}>Failed to load hls_mapping.json: {err}</div>;
+  if (err) return <div style={{ padding: 20, color: '#DC2626' }}>{err}</div>;
   if (!data) return <div style={{ padding: 20, color: 'var(--gray-600)' }}>Loading…</div>;
 
   // Auto callouts derived from data
@@ -919,19 +913,11 @@ function HSEvolutionSankey() {
   );
 }
 
-// ─── HS Mapping Tab (sourced from hls_mapping.json) ───────────────────────
+// ─── HS Mapping Tab (sourced from window.ISO_DATA — SSOT) ─────────────────
 function HLSMappingTab() {
-  const [data, setData] = useState(null);
-  const [err, setErr] = useState(null);
+  const data = window.ISO_DATA && window.ISO_DATA.hlsMapping;
   const [openStd, setOpenStd] = useState(null);
-  React.useEffect(() => {
-    fetch('hls_mapping.json', { cache: 'no-cache' })
-      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(setData)
-      .catch(e => setErr(String(e)));
-  }, []);
-  if (err) return <div style={{ padding: 20, color: '#DC2626' }}>Failed to load hls_mapping.json: {err}<br /><span style={{ fontSize: 11, color: 'var(--gray-600)' }}>If you opened this from <code>file://</code>, browsers block fetch(). Use the GitHub Pages URL or run a local server.</span></div>;
-  if (!data) return <div style={{ padding: 20, color: 'var(--gray-600)' }}>Loading hls_mapping.json…</div>;
+  if (!data) return <div style={{ padding: 20, color: '#DC2626' }}>window.ISO_DATA not loaded. Ensure data/iso.js is included on this page.</div>;
 
   const renderSubclause = (sc, depth = 0) => (
     <div key={sc.id} style={{ paddingLeft: depth * 14, borderLeft: depth ? '1px dashed var(--gray-200)' : 'none', marginLeft: depth ? 6 : 0 }}>
