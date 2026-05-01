@@ -46,6 +46,17 @@
     } catch (_) { return ''; }
   }
 
+  function isMobile() { return window.matchMedia('(max-width: 900px)').matches; }
+  function closeDrawer() {
+    var host = document.getElementById('app-sidebar');
+    if (host) host.classList.remove('is-open');
+  }
+  function toggleDrawer() {
+    var host = document.getElementById('app-sidebar');
+    if (!host) return;
+    host.classList.toggle('is-open');
+  }
+
   function render() {
     var host = document.getElementById('app-sidebar');
     if (!host) return;
@@ -74,9 +85,42 @@
     navHtml += '</nav>';
 
     var footerHtml =
-      '<div class="app-sidebar__footer">System Integrity Verified</div>';
+      '<div class="app-sidebar__footer">' +
+        '<button type="button" class="app-cmdk-hint" id="app-cmdk-hint">' +
+          '<span>Search</span>' +
+          '<kbd>⌘K</kbd>' +
+        '</button>' +
+      '</div>';
 
     host.innerHTML = brandHtml + navHtml + footerHtml;
+
+    // Inject hamburger + backdrop as siblings (idempotent)
+    if (!document.querySelector('.app-sidebar-hamburger')) {
+      var hb = document.createElement('button');
+      hb.type = 'button';
+      hb.className = 'app-sidebar-hamburger';
+      hb.setAttribute('aria-label', 'Open menu');
+      hb.innerHTML = '☰';
+      hb.addEventListener('click', toggleDrawer);
+      host.parentNode.insertBefore(hb, host);
+    }
+    if (!document.querySelector('.app-sidebar-backdrop')) {
+      var bd = document.createElement('div');
+      bd.className = 'app-sidebar-backdrop';
+      bd.addEventListener('click', closeDrawer);
+      host.parentNode.insertBefore(bd, host.nextSibling);
+    }
+
+    // Close drawer on link tap (mobile)
+    host.querySelectorAll('.app-sidebar__link').forEach(function (a) {
+      a.addEventListener('click', function () { if (isMobile()) closeDrawer(); });
+    });
+
+    // Cmd+K hint → open palette
+    var hint = document.getElementById('app-cmdk-hint');
+    if (hint) hint.addEventListener('click', function () {
+      if (window.AppCmdK && window.AppCmdK.open) window.AppCmdK.open();
+    });
   }
 
   if (document.readyState === 'loading') {
