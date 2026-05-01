@@ -1,0 +1,337 @@
+# Instincts generated from https://github.com/asfalanoij/iso
+# Generated: 2026-05-01T12:56:11.775Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: iso-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: https://github.com/asfalanoij/iso
+---
+
+# Iso Commit Conventional
+
+## Action
+
+Use conventional commit format with prefixes: feat
+
+## Evidence
+
+- 1 commits analyzed
+- Detected conventional commit pattern
+- Examples: feat(ui): Sprint 2 — shared design tokens + global sidebar across modules
+
+---
+id: iso-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/asfalanoij/iso
+---
+
+# Iso Commit Length
+
+## Action
+
+Write moderate-length commit messages (~73 characters)
+
+## Evidence
+
+- Average commit message length: 73 chars
+- Based on 1 commits
+
+---
+id: iso-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/asfalanoij/iso
+---
+
+# Iso Naming Files
+
+## Action
+
+Use PascalCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: PascalCase
+
+---
+id: iso-import-relative
+trigger: "when importing modules"
+confidence: 0.75
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/asfalanoij/iso
+---
+
+# Iso Import Relative
+
+## Action
+
+Use relative imports for project files
+
+## Evidence
+
+- Import analysis shows relative import pattern
+- Example: import { x } from '../lib/x'
+
+---
+id: iso-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/asfalanoij/iso
+---
+
+# Iso Export Style
+
+## Action
+
+Prefer named exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: named
+
+---
+id: iso-test-separate
+trigger: "when writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/asfalanoij/iso
+---
+
+# Iso Test Separate
+
+## Action
+
+Place tests in the tests/ or __tests__/ directory, mirroring src structure
+
+## Evidence
+
+- Separate test directory pattern detected
+- Tests live in dedicated test folders
+
+---
+id: iso-instinct-file-naming-pascal
+trigger: "When creating a new file in the codebase"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: asfalanoij/iso
+---
+
+# Iso Instinct File Naming Pascal
+
+## Action
+
+Name the file using PascalCase (e.g., MyComponent.js)
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.files
+
+---
+id: iso-instinct-function-naming-camel
+trigger: "When defining a new function"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: asfalanoij/iso
+---
+
+# Iso Instinct Function Naming Camel
+
+## Action
+
+Name the function using camelCase (e.g., fetchData)
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.functions
+
+---
+id: iso-instinct-class-naming-pascal
+trigger: "When defining a new class"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: asfalanoij/iso
+---
+
+# Iso Instinct Class Naming Pascal
+
+## Action
+
+Name the class using PascalCase (e.g., UserProfile)
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.classes
+
+---
+id: iso-instinct-constant-naming-screaming-snake
+trigger: "When defining a constant value"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: asfalanoij/iso
+---
+
+# Iso Instinct Constant Naming Screaming Snake
+
+## Action
+
+Name the constant using SCREAMING_SNAKE_CASE (e.g., MAX_RETRIES)
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.constants
+
+---
+id: iso-instinct-import-relative
+trigger: "When importing modules or files"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: asfalanoij/iso
+---
+
+# Iso Instinct Import Relative
+
+## Action
+
+Use relative import paths (e.g., import X from '../X')
+
+## Evidence
+
+- Pattern in codeStyle.importStyle
+
+---
+id: iso-instinct-export-named
+trigger: "When exporting functions, classes, or constants"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: asfalanoij/iso
+---
+
+# Iso Instinct Export Named
+
+## Action
+
+Use named exports (e.g., export { MyComponent })
+
+## Evidence
+
+- Pattern in codeStyle.exportStyle
+
+---
+id: iso-instinct-commit-conventional-feat
+trigger: "When making a commit for a new feature"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: asfalanoij/iso
+---
+
+# Iso Instinct Commit Conventional Feat
+
+## Action
+
+Start the commit message with 'feat' following the conventional commit format (e.g., feat(module): description)
+
+## Evidence
+
+- Seen in commit: feat(ui): Sprint 2 — shared design tokens + global sidebar across modules
+- Pattern in commits.prefixes
+
+---
+id: iso-instinct-commit-length-70plus
+trigger: "When writing a commit message"
+confidence: 0.7
+domain: git
+source: repo-analysis
+source_repo: asfalanoij/iso
+---
+
+# Iso Instinct Commit Length 70plus
+
+## Action
+
+Write a descriptive commit message averaging around 70 characters
+
+## Evidence
+
+- Pattern in commits.averageLength
+
+---
+id: iso-instinct-error-handling-try-catch
+trigger: "When handling errors in code"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: asfalanoij/iso
+---
+
+# Iso Instinct Error Handling Try Catch
+
+## Action
+
+Use try-catch blocks for error handling
+
+## Evidence
+
+- Pattern in errorHandling.style
+
+---
+id: iso-instinct-test-location-separate
+trigger: "When adding or organizing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: asfalanoij/iso
+---
+
+# Iso Instinct Test Location Separate
+
+## Action
+
+Place test files in a separate directory from source files
+
+## Evidence
+
+- Pattern in architecture.folderStructure.testLocation
+
+---
+id: iso-instinct-component-folder
+trigger: "When creating reusable UI elements"
+confidence: 0.8
+domain: architecture
+source: repo-analysis
+source_repo: asfalanoij/iso
+---
+
+# Iso Instinct Component Folder
+
+## Action
+
+Place them in the 'components' folder
+
+## Evidence
+
+- Pattern in architecture.folderStructure.commonFolders
+
