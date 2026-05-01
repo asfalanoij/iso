@@ -860,12 +860,14 @@
       if (isUpdate) { store.ncrs[idx] = { ...store.ncrs[idx], ...sanitized }; }
       else { store.ncrs = [...(store.ncrs || []), { id: nextId('NCR'), riskIds: [], evidenceIds: [], ...sanitized }]; }
       _saveStore(store);
+      if (typeof window !== 'undefined' && window.AppToast) window.AppToast.success(isUpdate ? 'NCR updated' : 'NCR saved');
     },
     deleteNCR(ncrId) {
       const store = _getStore();
       store.ncrs = (store.ncrs || []).filter(n => n.id !== ncrId);
       _cascadeOnDeleteNCR(store, ncrId);
       _saveStore(store);
+      if (typeof window !== 'undefined' && window.AppToast) window.AppToast.info('NCR deleted');
     },
 
     // ── Risks ─────────────────────────────────────────────────────────────────
@@ -884,12 +886,14 @@
       if (isUpdate) { store.risks[idx] = { ...store.risks[idx], ...sanitized }; }
       else { store.risks = [...(store.risks || []), { id: nextId('R'), ncrIds: [], ...sanitized }]; }
       _saveStore(store);
+      if (typeof window !== 'undefined' && window.AppToast) window.AppToast.success(isUpdate ? 'Risk updated' : 'Risk saved');
     },
     deleteRisk(riskId) {
       const store = _getStore();
       store.risks = (store.risks || []).filter(r => r.id !== riskId);
       _cascadeOnDeleteRisk(store, riskId);
       _saveStore(store);
+      if (typeof window !== 'undefined' && window.AppToast) window.AppToast.info('Risk deleted');
     },
 
     // ── Legal Requirements ────────────────────────────────────────────────────
@@ -909,11 +913,13 @@
       if (isUpdate) { store.legalReqs[idx] = { ...store.legalReqs[idx], ...sanitized }; }
       else { store.legalReqs = [...(store.legalReqs || []), { id: nextId('LR'), ...sanitized }]; }
       _saveStore(store);
+      if (typeof window !== 'undefined' && window.AppToast) window.AppToast.success(isUpdate ? 'Legal requirement updated' : 'Legal requirement saved');
     },
     deleteLegalReq(id) {
       const store = _getStore();
       store.legalReqs = (store.legalReqs || []).filter(l => l.id !== id);
       _saveStore(store);
+      if (typeof window !== 'undefined' && window.AppToast) window.AppToast.info('Legal requirement deleted');
     },
 
     // ── Checklist Responses ───────────────────────────────────────────────────

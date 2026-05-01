@@ -16,6 +16,7 @@
 <script src="data/iso.js"></script>
 <script src="components/app-sidebar.js" defer></script>
 <script src="components/cmdk.js" defer></script>
+<script src="components/toast.js" defer></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -36,7 +37,7 @@ input:focus,select:focus,textarea:focus{border-color:#2563EB;box-shadow:0 0 0 3p
 </head>
 <body>
 <aside id="app-sidebar"></aside>
-<main class="app-main"><div id="root"></div></main>
+<main class="app-main"><div id="root"><div class="app-skeleton" aria-hidden="true"><div class="app-skeleton__row app-skeleton__row--lg"></div><div class="app-skeleton__row app-skeleton__row--md"></div><div class="app-skeleton__row"></div><div class="app-skeleton__row"></div><div class="app-skeleton__row app-skeleton__row--sm"></div></div></div></main>
 <script type="text/babel">
 const {useState,useMemo,useEffect}=React;
 
