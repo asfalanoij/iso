@@ -144,10 +144,214 @@ body {
   min-height: 100vh;
 }
 
-/* ── Mobile: hide sidebar; main reclaims full width ──────────────── */
+/* ── Mobile: sidebar becomes slide-in drawer + hamburger ─────────── */
+.app-sidebar { transition: transform 0.22s ease; }
+.app-sidebar-hamburger {
+  display: none;
+  position: fixed;
+  top: 12px; left: 12px;
+  width: 40px; height: 40px;
+  background: var(--navy);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  z-index: 102;
+  font-size: 18px;
+  align-items: center; justify-content: center;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+.app-sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 27, 42, 0.55);
+  z-index: 99;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.app-sidebar.is-open + .app-sidebar-backdrop { display: block; opacity: 1; }
+
 @media (max-width: 900px) {
-  .app-sidebar { display: none; }
-  .app-main { margin-left: 0; }
+  .app-sidebar {
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-md);
+  }
+  .app-sidebar.is-open { transform: translateX(0); }
+  .app-main { margin-left: 0; padding-top: 60px; /* clear hamburger */ }
+  .app-sidebar-hamburger { display: inline-flex; }
+}
+
+/* ── Cmd+K hint chip in sidebar footer ───────────────────────────── */
+.app-cmdk-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 11px;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.app-cmdk-hint:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+}
+.app-cmdk-hint kbd {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 2px 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ── Cmd+K palette modal ─────────────────────────────────────────── */
+.app-cmdk-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 27, 42, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 1000;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12vh 20px 20px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.app-cmdk-backdrop.is-open { display: flex; opacity: 1; }
+
+.app-cmdk-modal {
+  width: 100%;
+  max-width: 620px;
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  box-shadow: 0 20px 50px -10px rgba(15, 15, 15, 0.30), 0 8px 16px -4px rgba(15, 15, 15, 0.12);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 70vh;
+  font-family: var(--font);
+}
+
+.app-cmdk-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--gray-100);
+}
+.app-cmdk-prompt {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray-500);
+  background: var(--gray-100);
+  padding: 4px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.4px;
+}
+.app-cmdk-input {
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 15px;
+  color: var(--gray-900);
+  font-family: var(--font);
+  padding: 4px 0;
+}
+.app-cmdk-input::placeholder { color: var(--gray-500); }
+.app-cmdk-hint-key {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 3px 6px;
+  background: var(--gray-100);
+  color: var(--gray-600);
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+}
+
+.app-cmdk-list {
+  overflow-y: auto;
+  padding: 6px;
+  flex: 1;
+}
+.app-cmdk-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.08s;
+}
+.app-cmdk-item.is-active { background: var(--blue-light); }
+.app-cmdk-item-icon {
+  width: 26px; height: 26px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--gray-100);
+  border-radius: 6px;
+  color: var(--gray-700);
+  font-size: 13px; font-weight: 600;
+  flex-shrink: 0;
+}
+.app-cmdk-item--page      .app-cmdk-item-icon { background: #FEE2E2; color: var(--red); }
+.app-cmdk-item--clause    .app-cmdk-item-icon { background: #DBEAFE; color: var(--blue); }
+.app-cmdk-item--standard  .app-cmdk-item-icon { background: var(--green-light); color: var(--green); }
+.app-cmdk-item--extension .app-cmdk-item-icon { background: var(--amber-light); color: var(--amber); }
+.app-cmdk-item-body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.app-cmdk-item-title {
+  font-size: 13.5px; font-weight: 600; color: var(--gray-900);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.app-cmdk-item-sub {
+  font-size: 11.5px; color: var(--gray-600); margin-top: 2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.app-cmdk-item-kind {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+.app-cmdk-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--gray-500);
+  font-size: 13px;
+}
+
+.app-cmdk-foot {
+  display: flex;
+  gap: 16px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--gray-100);
+  font-size: 11px;
+  color: var(--gray-500);
+}
+.app-cmdk-foot kbd {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 2px 5px;
+  background: var(--gray-100);
+  border: 1px solid var(--gray-200);
+  border-radius: 3px;
+  margin-right: 4px;
+  color: var(--gray-700);
 }
 
 /* ── Scrollbar polish ─────────────────────────────────────────────── */
