@@ -768,12 +768,25 @@ function HSEvolutionSankey() {
       ? links.filter(l => l.custom?.family === focusFamily)
       : links;
 
+    // Responsive height: fill viewport minus header/legend/chips/callouts/footer
+    const getSankeyHeight = () => Math.max(720, (window.innerHeight || 900) - 320);
+
     chartRef.current.innerHTML = '';
+    let chart = null;
+    let rafId = null;
+    const onResize = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        if (chart && chartRef.current) {
+          try { chart.setSize(undefined, getSankeyHeight(), false); } catch (_) {}
+        }
+      });
+    };
     try {
       // Strip the sortable prefix ("S0|", "C0|", "O0|") from a node id
       const stripPrefix = (id) => (id || '').split('|').slice(1).join('|') || id;
-      window.Highcharts.chart(chartRef.current, {
-        chart: { type: 'sankey', height: 920, backgroundColor: 'transparent', style: { fontFamily: 'Inter, system-ui, sans-serif' } },
+      chart = window.Highcharts.chart(chartRef.current, {
+        chart: { type: 'sankey', height: getSankeyHeight(), backgroundColor: 'transparent', style: { fontFamily: 'Inter, system-ui, sans-serif' } },
         title: { text: null },
         credits: { enabled: false },
         accessibility: { enabled: false },
@@ -843,6 +856,13 @@ function HSEvolutionSankey() {
     } catch (e) {
       chartRef.current.innerHTML = `<div style="color:#DC2626;padding:20px">Highcharts error: ${e.message}</div>`;
     }
+
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      if (rafId) cancelAnimationFrame(rafId);
+      if (chart) { try { chart.destroy(); } catch (_) {} }
+    };
   }, [data, focusFamily]);
 
   if (err) return <div style={{ padding: 20, color: '#DC2626' }}>{err}</div>;
@@ -898,7 +918,7 @@ function HSEvolutionSankey() {
       </div>
 
       {/* Chart */}
-      <div ref={chartRef} style={{ minHeight: 920 }} />
+      <div ref={chartRef} style={{ minHeight: Math.max(720, (typeof window !== 'undefined' ? (window.innerHeight - 320) : 720)), width: '100%' }} />
 
       {/* Auto callouts */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginTop: 18 }}>
