@@ -354,6 +354,149 @@ body {
   color: var(--gray-700);
 }
 
+/* Cmd+K match highlight */
+.app-cmdk-item-title mark,
+.app-cmdk-item-sub mark {
+  background: rgba(245, 158, 11, 0.20);
+  color: inherit;
+  padding: 0 1px;
+  border-radius: 2px;
+  font-weight: 700;
+}
+
+/* ── Toast notifications ─────────────────────────────────────────── */
+.app-toast-container {
+  position: fixed;
+  bottom: max(20px, env(safe-area-inset-bottom, 16px));
+  right: 20px;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+  max-width: 360px;
+}
+.app-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px 12px 12px;
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-left: 3px solid var(--gray-400);
+  border-radius: 8px;
+  box-shadow: 0 8px 20px -4px rgba(15, 15, 15, 0.18), 0 2px 6px -1px rgba(15, 15, 15, 0.08);
+  font: 500 13px/1.4 var(--font);
+  color: var(--gray-900);
+  text-align: left;
+  cursor: pointer;
+  transform: translateX(120%);
+  opacity: 0;
+  transition: transform 0.22s ease, opacity 0.22s ease;
+  min-width: 220px;
+}
+.app-toast.is-shown { transform: translateX(0); opacity: 1; }
+.app-toast.is-leaving { transform: translateX(120%); opacity: 0; }
+.app-toast__icon {
+  width: 22px; height: 22px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 12px;
+  flex-shrink: 0;
+  color: #fff;
+}
+.app-toast__msg { flex: 1; }
+.app-toast--success { border-left-color: var(--green); }
+.app-toast--success .app-toast__icon { background: var(--green); }
+.app-toast--error   { border-left-color: var(--red); }
+.app-toast--error   .app-toast__icon { background: var(--red); }
+.app-toast--info    { border-left-color: var(--blue); }
+.app-toast--info    .app-toast__icon { background: var(--blue); }
+.app-toast--warn    { border-left-color: var(--amber); }
+.app-toast--warn    .app-toast__icon { background: var(--amber); }
+
+/* ── Skeleton loaders (inside #root before React boots) ───────────── */
+.app-skeleton {
+  padding: 28px;
+  animation-delay: 200ms;
+  animation-name: app-skeleton-fade-in;
+  animation-duration: 240ms;
+  animation-fill-mode: both;
+}
+@keyframes app-skeleton-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.app-skeleton__row {
+  height: 14px;
+  background: linear-gradient(90deg, var(--gray-100) 0%, var(--gray-200) 50%, var(--gray-100) 100%);
+  background-size: 400% 100%;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  animation: app-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+.app-skeleton__row--lg  { height: 22px; width: 50%; }
+.app-skeleton__row--md  { height: 16px; width: 75%; }
+.app-skeleton__row--sm  { height: 12px; width: 40%; }
+@keyframes app-skeleton-shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* ── Empty states for module pages ────────────────────────────────── */
+.app-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 48px 24px;
+  background: #fff;
+  border: 1px dashed var(--gray-300);
+  border-radius: 12px;
+  margin: 16px auto;
+  max-width: 520px;
+}
+.app-empty__icon {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--gray-100);
+  color: var(--gray-500);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  margin-bottom: 16px;
+}
+.app-empty__title {
+  font-size: 16px; font-weight: 700; color: var(--gray-900);
+  margin: 0 0 6px;
+}
+.app-empty__sub {
+  font-size: 13px; color: var(--gray-600); line-height: 1.5;
+  max-width: 360px;
+  margin: 0 0 18px;
+}
+.app-empty__cta {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px;
+  background: var(--navy);
+  color: #fff;
+  font-size: 13px; font-weight: 600;
+  border-radius: 6px;
+  border: 0;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.app-empty__cta:hover { background: #1B2C44; }
+
+/* ── Hash deep-link pulse-highlight ────────────────────────────────── */
+@keyframes app-cmdk-flash {
+  0%   { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.55); background: rgba(37, 99, 235, 0.10); }
+  60%  { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); background: rgba(37, 99, 235, 0.10); }
+  100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); background: transparent; }
+}
+.is-cmdk-flash {
+  animation: app-cmdk-flash 1.6s ease-out 1;
+  border-radius: 4px;
+}
+
 /* ── Scrollbar polish ─────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }

@@ -40,6 +40,20 @@
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
+  function escapeRegExp(s) {
+    return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function highlightMatch(text, parts) {
+    var safe = escapeHtml(text);
+    if (!parts || !parts.length) return safe;
+    var rx = parts.filter(Boolean).map(escapeRegExp).join('|');
+    if (!rx) return safe;
+    try {
+      return safe.replace(new RegExp('(' + rx + ')', 'gi'), '<mark>$1</mark>');
+    } catch (_) { return safe; }
+  }
+
   function buildIndex() {
     var iso = (typeof window !== 'undefined' && window.ISO_DATA) || null;
     var idx = [];
@@ -190,6 +204,7 @@
       $list.innerHTML = '<div class="app-cmdk-empty">No matches. Try "27001", "evidence", or a clause number.</div>';
       return;
     }
+    var queryParts = ($input && $input.value || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
     var html = '';
     filtered.forEach(function (it, i) {
       var sel = i === cursor ? ' is-active' : '';
@@ -197,8 +212,8 @@
         '<button type="button" class="app-cmdk-item app-cmdk-item--' + escapeHtml(it.kind) + sel + '" data-i="' + i + '" role="option">' +
           '<span class="app-cmdk-item-icon">' + escapeHtml(it.icon) + '</span>' +
           '<span class="app-cmdk-item-body">' +
-            '<span class="app-cmdk-item-title">' + escapeHtml(it.title) + '</span>' +
-            '<span class="app-cmdk-item-sub">' + escapeHtml(it.subtitle) + '</span>' +
+            '<span class="app-cmdk-item-title">' + highlightMatch(it.title, queryParts) + '</span>' +
+            '<span class="app-cmdk-item-sub">' + highlightMatch(it.subtitle, queryParts) + '</span>' +
           '</span>' +
           '<span class="app-cmdk-item-kind">' + escapeHtml(it.kind) + '</span>' +
         '</button>';
