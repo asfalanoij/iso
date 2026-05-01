@@ -1,0 +1,159 @@
+/* Telin GRC Suite — shared design tokens + global layout
+   Loaded by every page as <link rel="stylesheet" href="theme.css">.
+
+   What lives here:
+   - Color, typography, radius, shadow tokens (single source)
+   - Reset + base typography
+   - Fixed left sidebar layout (.app-sidebar, .app-main)
+   - Mobile breakpoint: hide sidebar under 900px
+
+   What does NOT live here:
+   - Page-specific component styles (still in each page's <style>)
+   - Module-specific layouts
+*/
+
+/* ── Design tokens ────────────────────────────────────────────────── */
+:root {
+  /* Brand */
+  --red: #E2001A;
+  --red-light: #FFF1F2;
+  --red-mid: #FECDCD;
+  --navy: #0D1B2A;
+
+  /* Neutrals */
+  --gray-50:  #f7f7f5;
+  --gray-100: #f1f1f0;
+  --gray-200: #e9ecef;
+  --gray-300: #dee2e6;
+  --gray-400: #ced4da;
+  --gray-500: #868685;
+  --gray-600: #6C757D;
+  --gray-700: #37352f;
+  --gray-800: #212529;
+  --gray-900: #050505;
+
+  /* Status */
+  --green: #16A34A;
+  --green-light: #DCFCE7;
+  --amber: #D97706;
+  --amber-light: #FEF3C7;
+  --blue: #2563EB;
+  --blue-light: #EFF6FF;
+
+  /* Type */
+  --font: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --mono: 'DM Mono', ui-monospace, monospace;
+
+  /* Layout */
+  --sidebar-w: 240px;
+
+  /* Surfaces */
+  --shadow-sm: 0 1px 2px rgba(15, 15, 15, 0.08);
+  --shadow:    0 1px 3px rgba(15, 15, 15, 0.10);
+  --shadow-md: 0 4px 6px -1px rgba(15, 15, 15, 0.10), 0 2px 4px -1px rgba(15, 15, 15, 0.06);
+
+  /* Radii */
+  --radius: 6px;
+  --radius-pill: 9999px;
+  --radius-lg: 10px;
+
+  /* Glass */
+  --glass-bg: #fff;
+  --glass-border: var(--gray-200);
+}
+
+/* ── Reset (idempotent — pages may include their own resets) ──────── */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font);
+  background: var(--gray-50);
+  color: var(--gray-900);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Shared layout for module pages ───────────────────────────────── */
+/* Pages opt in by adding `<aside id="app-sidebar">` + wrapping content in `<main class="app-main">`.
+   Sidebar is position: fixed so existing page layouts don't need to change. */
+.app-sidebar {
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  width: var(--sidebar-w);
+  background: var(--navy);
+  color: rgba(255, 255, 255, 0.6);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  font-family: var(--font);
+}
+.app-sidebar__brand {
+  display: flex; align-items: center; gap: 10px;
+  padding: 22px 18px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.app-sidebar__logo {
+  width: 34px; height: 34px;
+  background: var(--red);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 800; font-size: 15px; letter-spacing: -0.5px;
+}
+.app-sidebar__title    { color: #fff; font-weight: 700; font-size: 14px; line-height: 1.2; }
+.app-sidebar__subtitle { color: rgba(255, 255, 255, 0.45); font-size: 11px; line-height: 1.3; margin-top: 2px; }
+
+.app-sidebar__section-title {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+  padding: 14px 18px 6px;
+}
+.app-sidebar__nav { padding: 8px 10px; flex: 1; overflow-y: auto; }
+.app-sidebar__link {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 13px;
+  text-decoration: none;
+  margin-bottom: 1px;
+  transition: background 0.12s, color 0.12s;
+  cursor: pointer;
+}
+.app-sidebar__link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.9);
+}
+.app-sidebar__link[aria-current="page"] {
+  background: rgba(226, 0, 26, 0.18);
+  color: #FF6B7A;
+  font-weight: 600;
+}
+.app-sidebar__icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+
+.app-sidebar__footer {
+  padding: 10px 18px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+/* Main content next to the fixed sidebar */
+.app-main {
+  margin-left: var(--sidebar-w);
+  min-height: 100vh;
+}
+
+/* ── Mobile: hide sidebar; main reclaims full width ──────────────── */
+@media (max-width: 900px) {
+  .app-sidebar { display: none; }
+  .app-main { margin-left: 0; }
+}
+
+/* ── Scrollbar polish ─────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gray-400); }
+.app-sidebar ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); }
+.app-sidebar ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
