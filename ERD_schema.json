@@ -1,25 +1,136 @@
 {
+  "metadata": {
+    "title": "Telin GRC Suite — Entity Relationship Diagram (current state)",
+    "version": "2.0.0",
+    "generated": "2026-05-02",
+    "supersedes": "1.0.0 (initial mock; Sprints 1-4 integrated)",
+    "tiers": {
+      "ssot_reference": "Read-only static reference data. In-memory at runtime via window.ISO_DATA, window.STD_META, window.HLS_CLAUSES, window.RAW_ISO_DATA. Sourced from data/iso.js (HS skeleton + per-standard mapping), data/crosswalk.js (legacy STD_META + clause crosswalk + Annex A control crosswalk + 37001 delta), data/raw.js (legacy raw clause/control reference).",
+      "ssot_operational": "User-edited transactional data. Persisted in browser localStorage under key 'telin_grc_v1'. Managed by the GRCStore singleton in store.js with soft validation, cascade rules, and an event bus.",
+      "ui_state": "Ephemeral UI state — active tab, focus filters, drawer open, palette open, expanded row id. Held in React useState per page; reset on reload."
+    }
+  },
   "entities": [
-    {"id": "STD", "label": "standards", "type": "REF", "fields": ["id PK", "code", "abbr", "certType", "color"]},
-    {"id": "JUR", "label": "jurisdictions", "type": "REF", "fields": ["id PK", "code", "label", "flag"]},
-    {"id": "MIL", "label": "milestones", "type": "MASTER", "fields": ["id PK", "standardId FK", "name", "phase", "startWeek", "status"]},
-    {"id": "DOC", "label": "documents", "type": "MASTER", "fields": ["id PK", "standardId FK", "name", "status"]},
-    {"id": "EV", "label": "evidence", "type": "OPS", "fields": ["id PK", "standardIds[] FK", "clauseRefs[]", "type", "status", "owner"]},
-    {"id": "RISK", "label": "risks", "type": "OPS", "fields": ["id PK", "standardIds[] FK", "ncrIds[] FK", "likelihood", "impact", "treatment"]},
-    {"id": "NCR", "label": "ncrs", "type": "OPS", "fields": ["id PK", "standardId FK", "riskIds[] FK", "evidenceIds[] FK", "severity", "status"]},
-    {"id": "LR", "label": "legalReqs", "type": "OPS", "fields": ["id PK", "jurisdiction FK", "standardIds[] FK", "type", "priority", "status"]},
-    {"id": "CR", "label": "checklistResp", "type": "OPS", "fields": ["id PK", "standardId FK", "clauseRef", "finding", "evidenceSampled"]}
+    { "id": "HS",     "tier": "ssot_reference", "label": "harmonizedStructure",      "source": "data/iso.js → window.ISO_DATA.harmonizedStructure", "fields": ["version_in_use_for_skeleton", "clauses[]"] },
+    { "id": "HSC",    "tier": "ssot_reference", "label": "hsClause",                 "source": "data/iso.js (nested in HS)", "fields": ["id PK (e.g. '4', '4.1', '7.5.1')", "title", "subclauses[]?", "subclauses[].notes?", "subclauses[].children[]?"] },
+    { "id": "STD_M",  "tier": "ssot_reference", "label": "standardHsMapping",        "source": "data/iso.js → window.ISO_DATA.standardsHsMapping", "fields": ["id PK", "code", "name", "publication_date (YYYY-MM)", "annex_sl_aligned (bool | 'indirect')", "hs_revision_followed", "extensions_beyond_hs[]", "annex_controls?", "deviation_notes", "transition? { deadline_for_certified_organizations YYYY-MM-DD, source }", "successor? FK→STD_M", "structure_note?", "follow_up_required?", "amendment_status?"] },
+    { "id": "EXT",    "tier": "ssot_reference", "label": "standardExtension",        "source": "data/iso.js (nested in STD_M.extensions_beyond_hs[])", "fields": ["ref (HS-anchored clause id)", "title", "notes?"] },
+    { "id": "ANX",    "tier": "ssot_reference", "label": "annexControlTheme",        "source": "data/iso.js (nested in STD_M.annex_controls.themes[])", "fields": ["id PK (e.g. 'A.5')", "title", "count"] },
+    { "id": "SRC",    "tier": "ssot_reference", "label": "source",                   "source": "data/iso.js → window.ISO_DATA.sources[]", "fields": ["id PK", "url", "fetched (YYYY-MM-DD)", "status?", "claims[]?", "use?"] },
+    { "id": "HLS_LEGACY", "tier": "ssot_reference", "label": "HLS_CLAUSES (legacy)", "source": "data/crosswalk.js → window.HLS_CLAUSES", "fields": ["section", "title", "clauses[].ref", "clauses[].title", "clauses[].mapping{stdId}"] },
+    { "id": "ANNEX_CW", "tier": "ssot_reference", "label": "ANNEX_CONTROL_CROSSWALK", "source": "data/crosswalk.js → window.ANNEX_CONTROL_CROSSWALK", "fields": ["category", "title", "controls[].id", "controls[].title", "controls[].mapping{stdId}"] },
+    { "id": "DELTA37", "tier": "ssot_reference", "label": "ISO37001_DELTA",           "source": "data/crosswalk.js → window.ISO37001_DELTA", "fields": ["summary{total, newClauses}", "items[]"] },
+    { "id": "RAW",    "tier": "ssot_reference", "label": "RAW_ISO_DATA",             "source": "data/raw.js → window.RAW_ISO_DATA", "fields": ["standards[].id", "standards[].code", "standards[].clauses[]", "standards[].annexes[]"] },
+
+    { "id": "STD",    "tier": "ssot_operational", "label": "standards (operational)", "type": "REF",    "source": "GRCStore (localStorage)", "fields": ["id PK (matches STD_M.id)", "code", "abbr", "certType", "color"] },
+    { "id": "JUR",    "tier": "ssot_operational", "label": "jurisdictions",           "type": "REF",    "source": "GRCStore", "fields": ["id PK", "code", "label", "flag"] },
+    { "id": "USR",    "tier": "ssot_operational", "label": "users",                   "type": "REF",    "source": "GRCStore", "fields": ["id PK", "email", "name", "role (Super Admin | C-Level | VP | Admin | User)"] },
+    { "id": "MIL",    "tier": "ssot_operational", "label": "milestones",              "type": "MASTER", "source": "GRCStore", "fields": ["id PK", "standardId FK→STD", "name", "phase", "startWeek", "status"] },
+    { "id": "DOC",    "tier": "ssot_operational", "label": "documents",               "type": "MASTER", "source": "GRCStore", "fields": ["id PK", "standardId FK→STD", "name", "status (approved | in-review | draft | not-started)"] },
+    { "id": "EV",     "tier": "ssot_operational", "label": "evidence",                "type": "OPS",    "source": "GRCStore (upsertEvidence / deleteEvidence)", "fields": ["id PK (E* prefix)", "name", "standardIds[] FK→STD", "clauseRefs[] (logical FK→HSC)", "type", "status (5-state lifecycle)", "owner", "url?", "createdAt? (ISO-8601)", "updatedAt? (ISO-8601)"] },
+    { "id": "RISK",   "tier": "ssot_operational", "label": "risks",                   "type": "OPS",    "source": "GRCStore", "fields": ["id PK (R* prefix)", "standardIds[] FK→STD", "ncrIds[] FK→NCR", "likelihood", "impact", "treatment", "owner?"] },
+    { "id": "NCR",    "tier": "ssot_operational", "label": "ncrs",                    "type": "OPS",    "source": "GRCStore", "fields": ["id PK (NCR* prefix)", "standardId FK→STD", "riskIds[] FK→RISK", "evidenceIds[] FK→EV", "severity", "status"] },
+    { "id": "LR",     "tier": "ssot_operational", "label": "legalReqs",               "type": "OPS",    "source": "GRCStore", "fields": ["id PK (LR* prefix)", "jurisdiction FK→JUR", "standardIds[] FK→STD", "type", "priority", "status"] },
+    { "id": "CR",     "tier": "ssot_operational", "label": "checklistResponses",      "type": "OPS",    "source": "GRCStore (composite key 'standardId-idx')", "fields": ["compositeKey", "finding (not-checked | conformant | minor | major | observation)", "evidenceSampled", "notes"] },
+    { "id": "AL",     "tier": "ssot_operational", "label": "auditLogs",               "type": "AUDIT",  "source": "GRCStore (immutable append)", "fields": ["id PK", "ts (ISO-8601)", "actor", "entity", "entityId", "action", "diff?"] },
+
+    { "id": "UI",     "tier": "ui_state", "label": "uiState (per page)", "source": "React useState — not persisted", "fields": ["activeTab", "highlightStd", "focusFamily", "expandedId", "selectedIds", "searchQuery", "drawerOpen", "cmdkOpen", "toastQueue[]"] }
   ],
   "relationships": [
-    {"from": "MIL", "to": "STD", "label": "M:1", "cascade": "CASCADE"},
-    {"from": "DOC", "to": "STD", "label": "M:1", "cascade": "CASCADE"},
-    {"from": "EV", "to": "STD", "label": "M:M (standardIds[])", "cascade": "SET NULL"},
-    {"from": "RISK", "to": "STD", "label": "M:M (standardIds[])", "cascade": "SET NULL"},
-    {"from": "NCR", "to": "STD", "label": "M:1 (standardId)", "cascade": "CASCADE"},
-    {"from": "NCR", "to": "RISK", "label": "M:M (riskIds[] ↔ ncrIds[])", "cascade": "NULLIFY"},
-    {"from": "NCR", "to": "EV", "label": "M:M (evidenceIds[])", "cascade": "NULLIFY"},
-    {"from": "LR", "to": "JUR", "label": "M:1 (jurisdiction)", "cascade": "RESTRICT"},
-    {"from": "LR", "to": "STD", "label": "M:M (standardIds[])", "cascade": "SET NULL"},
-    {"from": "CR", "to": "STD", "label": "M:1 (standardId)", "cascade": "CASCADE"}
+    { "from": "HSC",   "to": "HS",    "label": "M:1" },
+    { "from": "EXT",   "to": "STD_M", "label": "M:1" },
+    { "from": "ANX",   "to": "STD_M", "label": "M:1" },
+    { "from": "STD_M", "to": "STD_M", "label": "1:1 successor", "via": "successor" },
+
+    { "from": "MIL",   "to": "STD",   "label": "M:1", "cascade": "CASCADE" },
+    { "from": "DOC",   "to": "STD",   "label": "M:1", "cascade": "CASCADE" },
+    { "from": "EV",    "to": "STD",   "label": "M:M (standardIds[])", "cascade": "SET NULL" },
+    { "from": "RISK",  "to": "STD",   "label": "M:M (standardIds[])", "cascade": "SET NULL" },
+    { "from": "NCR",   "to": "STD",   "label": "M:1 (standardId)", "cascade": "CASCADE" },
+    { "from": "NCR",   "to": "RISK",  "label": "M:M (riskIds[] ↔ ncrIds[])", "cascade": "NULLIFY" },
+    { "from": "NCR",   "to": "EV",    "label": "M:M (evidenceIds[])", "cascade": "NULLIFY" },
+    { "from": "LR",    "to": "JUR",   "label": "M:1", "cascade": "RESTRICT" },
+    { "from": "LR",    "to": "STD",   "label": "M:M (standardIds[])", "cascade": "SET NULL" },
+    { "from": "CR",    "to": "STD",   "label": "M:1 (standardId)", "cascade": "CASCADE" },
+
+    { "from": "STD",   "to": "STD_M", "label": "logical 1:1 by id (operational ↔ reference)", "cascade": "none", "note": "id string match only; not enforced." },
+    { "from": "EV",    "to": "HSC",   "label": "logical M:M via clauseRefs[]", "cascade": "none" },
+    { "from": "EV",    "to": "STD_M", "label": "logical M:M via STD intermediate" },
+
+    { "from": "AL",    "to": "EV",    "label": "audit trail" },
+    { "from": "AL",    "to": "RISK",  "label": "audit trail" },
+    { "from": "AL",    "to": "NCR",   "label": "audit trail" },
+    { "from": "AL",    "to": "LR",    "label": "audit trail" },
+    { "from": "AL",    "to": "MIL",   "label": "audit trail" },
+    { "from": "AL",    "to": "DOC",   "label": "audit trail" }
+  ],
+  "persistence": {
+    "ssot_reference": {
+      "where": "Inline JS modules (data/iso.js, data/crosswalk.js, data/raw.js)",
+      "loaded_via": "Synchronous <script> tags before React mount",
+      "exposed_as": ["window.ISO_DATA", "window.STD_META", "window.HLS_CLAUSES", "window.ANNEX_CONTROL_CROSSWALK", "window.ANNEX_DOMAINS", "window.ISO37001_DELTA", "window.RAW_ISO_DATA"],
+      "json_export": "data/ssot.json (mirrors window.ISO_DATA.hlsMapping)"
+    },
+    "ssot_operational": {
+      "where": "Browser localStorage",
+      "key": "telin_grc_v1",
+      "schema_version": "1",
+      "managed_by": "GRCStore singleton (store.js)",
+      "events_emitted": ["change"],
+      "id_prefixes": { "evidence": "E", "ncrs": "NCR", "risks": "R", "legalReqs": "LR" },
+      "soft_validation": "_validate('entityType', sanitized, isUpdate)",
+      "cascade_helpers": ["_cascadeOnDeleteEvidence", "_cascadeOnDeleteNCR", "_cascadeOnDeleteRisk"]
+    },
+    "ui_state": {
+      "where": "React useState (per component)",
+      "persistence": "none — reset on reload",
+      "exception": "Sprint 4 toast queue is module-scoped in components/toast.js"
+    }
+  },
+  "data_flow": {
+    "boot": [
+      "<link theme.css> + <script data/crosswalk.js> + <script data/raw.js> + <script store.js> + <script data/iso.js> + <script components/app-sidebar.js defer> + <script components/cmdk.js defer> + <script components/toast.js defer>",
+      "Synchronous: window.ISO_DATA, window.STD_META, etc. populated before React mount",
+      "Babel-standalone compiles JSX (~600ms-1.2s) — skeleton placeholder shown",
+      "React.render() replaces #root → page interactive"
+    ],
+    "read": [
+      "React useMemo + GRCStore getters (getEvidence/getRisks/getNCRs/getLegalReqs/etc.)",
+      "Cmd+K palette reads window.ISO_DATA.harmonizedStructure + standardsHsMapping"
+    ],
+    "write": [
+      "User action → React handler → GRCStore.upsertX/deleteX → _sanitize → _validate → mutate → _saveStore (localStorage.setItem) → _emit('change')",
+      "Sprint 4 hook: each mutation calls window.AppToast.success/info if loaded"
+    ],
+    "search_navigate": [
+      "⌘K → palette → substring multi-token match → click → location.href = 'Foo.html' or 'ISO Crosswalk.html#clause=4.1'",
+      "Crosswalk reads location.hash on mount → tab switch → scrollIntoView + .is-cmdk-flash + AppToast.info"
+    ]
+  },
+  "ui_components": {
+    "shared_global": {
+      "theme.css": "Design tokens + sidebar/main layout + toast/skeleton/empty/cmdk styles + mobile drawer + cmdk-flash keyframe",
+      "components/app-sidebar.js": "Vanilla-JS sidebar; nav links + hamburger + backdrop + Cmd+K hint chip",
+      "components/cmdk.js": "Vanilla-JS command palette; window.AppCmdK = {open, close}",
+      "components/toast.js": "Vanilla-JS toast queue; window.AppToast = {success, error, info, warn, dismiss}"
+    },
+    "page_specific_react": {
+      "Dashboard.html": "SPA tabs (Dashboard, Timeline, Standards, Documents, Executive Analytics, Project Charter); inline React Sidebar",
+      "ISO Crosswalk.html": "8 tabs incl. HS Mapping (JSON) and Sankey · HS Evolution",
+      "Evidence Register.html": "5-state lifecycle workflow",
+      "NCR Tracker.html": "Non-conformity register",
+      "Risk Register.html": "Risk catalogue + treatment",
+      "Legal Register.html": "Statutory + regulatory obligations",
+      "Audit Checklist.html": "Walk-through prompts",
+      "Data Governance.html": "DAMA-DMBOK governance view",
+      "index.html": "Landing page with module grid"
+    }
+  },
+  "validation_notes": [
+    "ERD reflects code+data state as of 2026-05-02 — Sprints 1-4 (SSOT, shared sidebar, ⌘K palette + mobile drawer, toasts + hash deep-linking + skeleton + Cmd+K highlights) integrated.",
+    "FKs are logical — localStorage doesn't enforce referential integrity. GRCStore mutation methods do soft-validation and cascade in helpers.",
+    "Cross-tier link (operational STD ↔ reference STD_M) is by string id match; drift detected on first read by Crosswalk page.",
+    "Sprint 5 (queued) will add dark-mode tokens (html.dark{}) + friendly empty-state cards on the four operational module pages.",
+    "Mock-up disclaimer: no real Telin data. ISO standards content reconstructed from secondary sources for ideation only. Final crosswalk validation = accredited certification body."
   ]
 }
