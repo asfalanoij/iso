@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Telin — ISO Crosswalk 2026 · Print Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.0/highcharts.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.0/modules/sankey.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.0/modules/dependency-wheel.js" crossorigin="anonymous"></script>
+<style>
+/* ─── Design tokens (match ISO Crosswalk.html exactly) ─── */
+:root {
+  --navy:    #0D1B2A;
+  --red:     #E2001A;
+  --gray-50: #f7f7f5;
+  --gray-100:#f1f1f0;
+  --gray-200:#e9ecef;
+  --gray-300:#dee2e6;
+  --gray-500:#868685;
+  --gray-600:#6c757d;
+  --gray-700:#37352f;
+  --gray-900:#050505;
+  --font: 'Plus Jakarta Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+
+/* ─── Base ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 11px; }
+body {
+  font-family: var(--font);
+  background: #fff;
+  color: var(--gray-900);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* ─── Screen chrome ─────────────────────────────────────── */
+.print-bar {
+  position: sticky; top: 0; z-index: 999;
+  background: var(--navy);
+  color: #fff;
+  padding: 9px 20px;
+  display: flex; gap: 14px; align-items: center;
+  font-size: 12px; font-family: var(--font);
+}
+.print-bar button {
+  background: var(--red); color: #fff; border: none;
+  border-radius: 5px; padding: 7px 20px;
+  font-size: 12px; font-weight: 700; font-family: var(--font); cursor: pointer;
+}
+.print-bar .tip { opacity: .6; font-size: 11px; }
+.print-bar a { color: rgba(255,255,255,.65); text-decoration: none; font-size: 11px; margin-left: auto; }
+.print-bar a:hover { color: #fff; }
+
+/* ─── Page shell (A4 preview on screen) ─────────────────── */
+.shell {
+  max-width: 210mm;
+  margin: 20px auto 40px;
+  background: #fff;
+  box-shadow: 0 2px 40px rgba(0,0,0,.14);
+}
+
+/* ─── Document page ─────────────────────────────────────── */
+.doc-page {
+  padding: 14mm 15mm 20mm;
+  page-break-after: always;
+  position: relative;
+  min-height: 267mm; /* 297mm - 14mm top - 16mm bottom */
+  border-bottom: 1px dashed #ddd;
+}
+.doc-page:last-child { border-bottom: none; page-break-after: auto; }
+
+/* ─── Page footer ───────────────────────────────────────── */
+.pg-footer {
+  position: absolute;
+  bottom: 8mm; left: 15mm; right: 15mm;
+  border-top: 1px solid var(--gray-200);
+  padding-top: 4px;
+  display: flex; justify-content: space-between;
+  font-size: 7.5px; color: var(--gray-500);
+  font-family: var(--mono);
+}
+
+/* ─── Cover band ─────────────────────────────────────────── */
+.cover-band {
+  background: var(--navy);
+  color: #fff;
+  margin: -14mm -15mm 14mm;
+  padding: 18mm 15mm 14mm;
+}
+.cover-eyebrow {
+  font-size: 8.5px; font-weight: 700;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: rgba(255,255,255,.45); margin-bottom: 8px;
+}
+.cover-title {
+  font-size: 28px; font-weight: 800;
+  letter-spacing: -.5px; line-height: 1.12; margin-bottom: 6px;
+}
+.cover-subtitle {
+  font-size: 12px; color: rgba(255,255,255,.65); font-weight: 500; margin-bottom: 4px;
+}
+.cover-stds {
+  font-size: 10px; color: rgba(255,255,255,.45);
+  font-family: var(--mono); margin-bottom: 10px;
+}
+.cover-stripe { width: 44px; height: 3px; background: var(--red); border-radius: 2px; }
+
+/* ─── Section heading ────────────────────────────────────── */
+.sec-hd {
+  display: flex; align-items: baseline; gap: 10px;
+  border-bottom: 2px solid var(--navy);
+  padding-bottom: 5px; margin-bottom: 10px;
+}
+.sec-hd-title { font-size: 14px; font-weight: 800; color: var(--navy); letter-spacing: -.2px; }
+.sec-hd-sub   { font-size: 9px;  font-weight: 500; color: var(--gray-500); }
+
+/* ─── KPI bento ──────────────────────────────────────────── */
+.kpi-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; margin-bottom: 14px; }
+.kpi-card {
+  background: var(--gray-50); border: 1px solid var(--gray-200);
+  border-radius: 8px; padding: 10px 12px;
+}
+.kpi-lbl { font-size: 7.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--gray-500); margin-bottom: 5px; }
+.kpi-val { font-size: 22px; font-weight: 800; line-height: 1; letter-spacing: -1px; }
+.kpi-sub { font-size: 8.5px; color: var(--gray-500); margin-top: 4px; font-weight: 500; }
+
+/* ─── Scope / disclaimer boxes ───────────────────────────── */
+.scope-box {
+  font-size: 9.5px; color: #4B5563; line-height: 1.6;
+  padding: 11px 13px; background: #F9FAFB;
+  border-radius: 7px; border: 1px solid #E5E7EB; margin-bottom: 10px;
+}
+.disc-box {
+  font-size: 9px; color: #6B7280; line-height: 1.55;
+  padding: 9px 12px; background: #FFFBEB;
+  border: 1px solid #FDE68A; border-radius: 6px; margin-bottom: 14px;
+}
+
+/* ─── Standards summary table ────────────────────────────── */
+.std-summary-tbl { width: 100%; border-collapse: collapse; font-size: 9px; border: 1px solid var(--gray-200); border-radius: 8px; overflow: hidden; }
+.std-summary-tbl th { background: var(--navy); color: #fff; padding: 6px 10px; text-align: left; font-size: 9px; }
+.std-summary-tbl td { padding: 5px 10px; border-bottom: 1px solid var(--gray-100); }
+.std-summary-tbl tr:last-child td { border-bottom: none; }
+
+/* ─── HLS crosswalk table ────────────────────────────────── */
+.hls-tbl { width: 100%; border-collapse: collapse; font-size: 9px; table-layout: fixed; }
+.hls-tbl th {
+  background: var(--navy); color: #fff;
+  padding: 6px 7px; text-align: left; font-size: 8.5px; font-weight: 700;
+  vertical-align: top;
+}
+.hls-tbl th:first-child { width: 40mm; }
+.hls-sec td {
+  background: var(--gray-100); padding: 5px 8px;
+  font-weight: 700; font-size: 10px; color: var(--navy);
+  border-left: 3px solid var(--red);
+  border-top: 1px solid var(--gray-200);
+}
+.hls-clause td { padding: 5px 7px; vertical-align: top; border-bottom: 1px solid var(--gray-100); }
+.c-ref { font-family: var(--mono); font-size: 8.5px; color: var(--red); font-weight: 600; }
+.c-title { font-weight: 600; font-size: 9px; color: var(--gray-900); line-height: 1.3; margin-top: 1px; }
+.cov-badge {
+  display: inline-block; font-size: 7.5px; font-weight: 700;
+  border-radius: 3px; padding: 1px 5px; white-space: nowrap; margin-bottom: 2px;
+}
+.cov-full     { background: #DCFCE7; color: #15803D; }
+.cov-extended { background: #EFF6FF; color: #1D4ED8; }
+.cov-partial  { background: #FEF3C7; color: #92400E; }
+.cov-ref-txt { font-family: var(--mono); font-size: 7.5px; color: var(--gray-500); display: block; line-height: 1.25; }
+.cov-note-txt { font-size: 7.5px; color: #374151; line-height: 1.35; display: block; margin-top: 2px; }
+.cov-dash { color: #D1D5DB; font-size: 11px; }
+.hls-tbl .clause-bg-full     { background: #F0FDF4; }
+.hls-tbl .clause-bg-extended { background: #EFF6FF; }
+.hls-tbl .clause-bg-partial  { background: #FFFBEB; }
+.hls-tbl .clause-bg-na       { background: #FAFAFA; }
+
+/* ─── Legend strip ───────────────────────────────────────── */
+.legend-strip { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; font-size: 9px; margin-bottom: 9px; }
+.legend-item  { display: flex; align-items: center; gap: 4px; }
+.legend-sw    { width: 10px; height: 10px; border-radius: 2px; display: inline-block; flex-shrink: 0; border: 1px solid rgba(0,0,0,.1); }
+
+/* ─── Standard cards (HS mapping) ────────────────────────── */
+.std-card { border: 1px solid var(--gray-200); border-radius: 8px; overflow: hidden; margin-bottom: 10px; page-break-inside: avoid; }
+.std-card-hd { padding: 9px 13px; background: var(--gray-50); }
+.std-code-lg { font-size: 12px; font-weight: 800; color: var(--navy); }
+.std-name-sm { font-size: 9px; color: var(--gray-600); margin-top: 1px; line-height: 1.35; }
+.std-hs-tag  { font-size: 8px; color: #7C3AED; font-family: var(--mono); margin-top: 3px; }
+.std-pub     { font-size: 8px; color: var(--gray-500); margin-top: 2px; }
+.std-deadline { font-size: 8.5px; color: #DC2626; font-weight: 600; margin-top: 2px; }
+.std-card-bd { padding: 9px 13px; }
+.dev-box {
+  background: #FEF3C7; border-left: 3px solid #F59E0B;
+  padding: 6px 9px; border-radius: 0 4px 4px 0;
+  margin-bottom: 8px; font-size: 8.5px; color: #78350F; line-height: 1.5;
+}
+.ext-lbl { font-size: 7.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--gray-700); margin-bottom: 5px; }
+.ext-row { display: flex; gap: 8px; padding: 3px 0; border-bottom: 1px dashed var(--gray-200); font-size: 8.5px; }
+.ext-row:last-child { border-bottom: none; }
+.ext-ref  { font-family: var(--mono); color: var(--red); font-weight: 600; min-width: 34px; flex-shrink: 0; }
+.ext-body { flex: 1; line-height: 1.35; }
+.ext-note-sm { font-size: 7.5px; color: #92400E; margin-top: 1px; }
+.annex-chip-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.annex-chip {
+  font-size: 8px; padding: 2px 5px; background: #fff;
+  border: 1px solid var(--gray-300); border-radius: 3px; font-family: var(--mono);
+}
+
+/* ─── HS Skeleton ─────────────────────────────────────────── */
+.sk-clause-grp { margin-bottom: 11px; padding-bottom: 8px; border-bottom: 1px solid var(--gray-100); }
+.sk-clause-grp:last-child { border-bottom: none; }
+.sk-clause-hd  { font-weight: 700; font-size: 11px; color: var(--navy); margin-bottom: 5px; }
+.sk-row { display: flex; gap: 6px; padding: 2px 0; align-items: flex-start; border-bottom: 1px dashed var(--gray-100); }
+.sk-row:last-child { border-bottom: none; }
+.sk-ref { font-family: var(--mono); color: var(--red); font-weight: 600; min-width: 34px; font-size: 8px; flex-shrink: 0; }
+.sk-txt { flex: 1; font-size: 8.5px; color: var(--gray-800); line-height: 1.35; }
+.sk-note { font-size: 7.5px; color: #92400E; background: #FEF3C7; padding: 2px 5px; border-radius: 3px; margin-top: 2px; }
+.sk-children { padding-left: 12px; border-left: 1px dashed var(--gray-200); margin-left: 5px; }
+
+/* ─── Annex A ─────────────────────────────────────────────── */
+.annex-cat-hd {
+  background: var(--gray-100); border-left: 3px solid var(--navy);
+  padding: 5px 9px; display: flex; gap: 8px; align-items: baseline;
+  font-weight: 700; font-size: 10px; color: var(--navy);
+}
+.annex-tbl { width: 100%; border-collapse: collapse; font-size: 8.5px; }
+.annex-tbl td { padding: 3px 7px; border-bottom: 1px solid var(--gray-100); vertical-align: top; }
+.annex-tbl td:first-child { font-family: var(--mono); color: var(--red); font-weight: 600; width: 44px; white-space: nowrap; }
+.annex-tbl td:nth-child(2) { font-weight: 600; width: 130px; }
+.annex-tbl td:nth-child(3) { width: 100px; color: var(--gray-600); font-size: 8px; }
+.annex-tbl td:nth-child(4) { color: var(--gray-500); font-size: 7.5px; line-height: 1.35; }
+.annex-section { margin-bottom: 10px; page-break-inside: avoid; }
+
+/* ─── Delta ──────────────────────────────────────────────── */
+.delta-kpi-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.delta-kpi { border: 1px solid var(--gray-200); border-radius: 8px; padding: 8px 12px; min-width: 78px; text-align: center; background: var(--gray-50); }
+.delta-kpi-val { font-size: 22px; font-weight: 800; line-height: 1; }
+.delta-kpi-lbl { font-size: 7.5px; font-weight: 700; text-transform: uppercase; color: var(--gray-500); margin-top: 3px; }
+.delta-ctx {
+  font-size: 9.5px; color: var(--gray-600); line-height: 1.55;
+  padding: 9px 12px; background: var(--gray-50);
+  border-radius: 6px; border-left: 3px solid var(--red); margin-bottom: 10px;
+}
+.key-actions-box {
+  background: var(--gray-50); border-left: 3px solid var(--red);
+  border-radius: 0 6px 6px 0; padding: 9px 12px; margin-bottom: 14px;
+}
+.key-actions-lbl { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--gray-500); margin-bottom: 5px; }
+.key-actions-list { list-style: none; padding: 0; }
+.key-actions-list li { font-size: 9px; color: var(--gray-700); padding: 2px 0; line-height: 1.45; display: flex; gap: 5px; }
+.key-actions-list li::before { content: '→'; color: var(--red); font-weight: 800; flex-shrink: 0; }
+.delta-tbl { width: 100%; border-collapse: collapse; font-size: 8.5px; border: 1px solid var(--gray-200); border-radius: 8px; overflow: hidden; }
+.delta-tbl th { background: var(--gray-50); border-bottom: 1px solid var(--gray-200); padding: 6px 7px; text-align: left; font-size: 8.5px; font-weight: 700; color: var(--gray-600); }
+.delta-tbl td { padding: 6px 7px; border-bottom: 1px solid var(--gray-100); vertical-align: top; }
+.delta-tbl tr:last-child td { border-bottom: none; }
+.delta-badge { display: inline-block; font-size: 7.5px; font-weight: 700; border-radius: 3px; padding: 1px 5px; }
+.delta-mono { font-family: var(--mono); font-weight: 700; color: var(--navy); white-space: nowrap; }
+.delta-old  { font-family: var(--mono); color: var(--gray-600); white-space: nowrap; }
+.delta-ttl  { font-weight: 600; font-size: 9px; color: var(--gray-900); }
+.delta-sum  { font-size: 8px; color: var(--gray-600); line-height: 1.4; margin-top: 2px; }
+.delta-act  { font-size: 8px; color: var(--navy); margin-top: 2px; }
+.delta-act span { color: var(--red); font-weight: 800; margin-right: 3px; }
+.imp-H { color: #DC2626; font-weight: 700; }
+.imp-M { color: #D97706; font-weight: 700; }
+.imp-L { color: #15803D; font-weight: 700; }
+
+/* ─── Sankey callouts ─────────────────────────────────────── */
+.callout-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-top: 12px; }
+.callout-card { padding: 10px 12px; border-radius: 8px; border: 1px solid; }
+.callout-val { font-size: 20px; font-weight: 800; line-height: 1; }
+.callout-lbl { font-size: 9px; font-weight: 700; margin-top: 2px; }
+.callout-note { font-size: 8px; color: var(--gray-600); margin-top: 3px; line-height: 1.35; }
+.annex-burden {
+  margin-top: 10px; padding: 9px 12px; background: #F1F5F9;
+  border-radius: 6px; font-size: 8.5px; color: var(--gray-700); line-height: 1.5;
+}
+.num-collision {
+  margin-top: 8px; padding: 8px 12px; background: #FEF3C7;
+  border: 1px solid #FDE68A; border-radius: 6px;
+  font-size: 8.5px; color: #78350F; line-height: 1.5;
+}
+
+/* ─── Methodology / sources ──────────────────────────────── */
+.method-intro { margin-bottom: 10px; padding: 10px 12px; background: var(--gray-50); border-radius: 6px; font-size: 9.5px; line-height: 1.6; color: var(--gray-700); }
+.method-steps { padding-left: 18px; margin-bottom: 10px; }
+.method-steps li { margin-bottom: 5px; font-size: 9.5px; line-height: 1.5; }
+.method-val { font-size: 9.5px; padding: 8px 10px; background: #F1F5F9; border-radius: 4px; margin-bottom: 14px; line-height: 1.5; }
+.sources-tbl { width: 100%; border-collapse: collapse; font-size: 8px; margin-top: 8px; }
+.sources-tbl th { background: var(--navy); color: #fff; padding: 5px 8px; text-align: left; font-size: 8.5px; }
+.sources-tbl td { padding: 3px 8px; border-bottom: 1px solid var(--gray-100); vertical-align: top; }
+.sources-tbl td:first-child { font-weight: 700; white-space: nowrap; width: 80px; }
+.sources-tbl td:nth-child(2) { color: #2563EB; font-family: var(--mono); font-size: 7.5px; word-break: break-all; width: 130px; }
+.caveat-list { padding-left: 16px; font-size: 9px; color: var(--gray-700); line-height: 1.5; }
+.caveat-list li { margin-bottom: 4px; }
+.mockup-warn {
+  padding: 9px 12px; background: #FFFBEB; border: 1px solid #FDE68A;
+  border-radius: 7px; font-size: 9px; color: #78350F; margin-bottom: 12px; line-height: 1.5;
+}
+
+/* ─── Download FAB (screen-only) ─────────────────────────── */
+.fab-dl {
+  position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+  background: var(--red); color: #fff;
+  border: none; border-radius: 50px;
+  padding: 12px 22px;
+  font-size: 13px; font-weight: 700; font-family: var(--font);
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(226,0,26,.45);
+  display: flex; align-items: center; gap: 8px;
+  transition: transform .15s, box-shadow .15s;
+}
+.fab-dl:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(226,0,26,.55); }
+
+/* ─── Print ──────────────────────────────────────────────── */
+/*
+  FIX: @page { margin: 0 } so the full A4 width is the CSS content box.
+  .doc-page { padding: 14mm 15mm } handles all margins on both screen and print.
+  This eliminates left/right clip: screen preview == printed output, exactly.
+*/
+@media print {
+  @page { size: A4 portrait; margin: 0; }
+  html { font-size: 10px; }
+  .print-bar, .fab-dl { display: none !important; }
+  .shell { max-width: 210mm; margin: 0 auto; box-shadow: none; }
+  /* doc-page padding is unchanged — same 14mm 15mm as screen */
+  .doc-page { min-height: 0; border-bottom: none; }
+  .doc-page:last-child { page-break-after: auto; }
+  /* footer: flow normally so it doesn't escape the content box */
+  .pg-footer { position: static; margin-top: 8mm; }
+  .std-card, .annex-section, .delta-tbl tr { page-break-inside: avoid; }
+}
+@media screen {
+  body { background: #d6d6d6; }
+}
+</style>
+</head>
+<body>
+
+<!-- Screen-only top bar -->
+<div class="print-bar">
+  <button onclick="window.print()">⎙ Print / Save PDF</button>
+  <span class="tip">File → Print → Save as PDF &nbsp;·&nbsp; Enable "Background graphics" in print dialog</span>
+  <a href="ISO%20Crosswalk.html">← Back to live Crosswalk</a>
+</div>
+
+<!-- Floating download button (screen-only, hidden on print) -->
+<button class="fab-dl" onclick="window.print()" title="Download as PDF">
+  ⬇ Download PDF
+</button>
+
+<div class="shell" id="shell"></div>
+
+<!-- Data files -->
+<script src="data/crosswalk.js"></script>
+<script src="data/iso.js"></script>
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   DOM helpers
+══════════════════════════════════════════════════════════ */
+const el = (tag, attrs, ...kids) => {
+  const e = document.createElement(tag);
+  if (attrs) Object.entries(attrs).forEach(([k, v]) => {
+    if (k === 'cls') e.className = v;
+    else if (k === 'html') e.innerHTML = v;
+    else e.setAttribute(k, v);
+  });
+  kids.flat(Infinity).forEach(k => k != null && e.appendChild(
+    typeof k === 'string' ? document.createTextNode(k) : k
+  ));
+  return e;
+};
+const d  = (cls, ...k) => el('div', { cls }, ...k);
+const s  = (cls, ...k) => el('span', { cls }, ...k);
+const t  = (cls, ...k) => el('table', { cls }, ...k);
+const tr = (...k) => el('tr', null, ...k);
+const td = (cls, ...k) => el('td', { cls }, ...k);
+const th = (cls, ...k) => el('th', { cls }, ...k);
+const strong = (...k) => el('strong', null, ...k);
+const em = (...k) => el('em', null, ...k);
+
+const shell = document.getElementById('shell');
+let pageNum = 0;
+
+function page(...content) {
+  pageNum++;
+  const pg = d('doc-page', ...content,
+    d('pg-footer',
+      el('span', null, 'ISO Crosswalk 2026 · Telin ISO Programme'),
+      el('span', null, `ISO 2026 readiness · rudy.prasetiya@telin.net · April 2026`)
+    )
+  );
+  shell.appendChild(pg);
+  return pg;
+}
+
+function secHd(title, sub) {
+  return d('sec-hd',
+    s('sec-hd-title', title),
+    sub ? s('sec-hd-sub', sub) : null
+  );
+}
+
+const COV = {
+  full:     { cls: 'cov-full',     label: 'Full',     bg: 'clause-bg-full' },
+  extended: { cls: 'cov-extended', label: 'Extended',  bg: 'clause-bg-extended' },
+  partial:  { cls: 'cov-partial',  label: 'Partial',   bg: 'clause-bg-partial' },
+  na:       { cls: '',             label: '—',         bg: 'clause-bg-na' },
+};
+
+const DSTYLE = {
+  new:      { bg: '#DCFCE7', color: '#15803D', label: 'NEW' },
+  modified: { bg: '#FEF3C7', color: '#92400E', label: 'MODIFIED' },
+  moved:    { bg: '#DBEAFE', color: '#1D4ED8', label: 'MOVED' },
+  enhanced: { bg: '#F3E8FF', color: '#7C3AED', label: 'ENHANCED' },
+  renamed:  { bg: '#F1F3F5', color: '#6B7280', label: 'RENAMED' },
+};
+
+/* ══════════════════════════════════════════════════════════
+   PAGE 1 — COVER
+══════════════════════════════════════════════════════════ */
+function buildCover() {
+  const now = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  const stds = Object.values(STD_META).map(s => s.code).join(' · ');
+
+  const band = d('cover-band',
+    d('cover-eyebrow', 'Telin ISO Programme 2026 · Print Edition'),
+    d('cover-title', 'Standards Crosswalk Matrix'),
+    d('cover-subtitle', 'Harmonized Structure mapping for 7 management system standards'),
+    d('cover-stds', stds),
+    d('cover-stripe')
+  );
+
+  const kpis = d('kpi-grid',
+    ...[
+      { lbl: 'HLS Clauses',       val: 56,   color: 'var(--gray-900)', sub: 'Sections §4–10' },
+      { lbl: 'Annex A Controls',  val: 93,   color: '#2563EB',         sub: '27001:2022' },
+      { lbl: 'Standards in Scope',val: 7,    color: '#059669',         sub: 'Across 4 domains' },
+      { lbl: '37001 Delta Items', val: ISO37001_DELTA.summary.total, color: '#7C3AED', sub: `${ISO37001_DELTA.summary.newClauses} new clauses` },
+      { lbl: 'New in 37001:2025', val: ISO37001_DELTA.summary.newClauses, color: '#DC2626', sub: 'vs 2016 version' },
+    ].map(k => d('kpi-card',
+      d('kpi-lbl', k.lbl),
+      el('div', { cls: 'kpi-val', style: `color:${k.color}` }, String(k.val)),
+      d('kpi-sub', k.sub)
+    ))
+  );
+
+  const scope = d('scope-box',
+    strong('Scope. '),
+    `This document maps the seven ISO/IEC management system standards in scope of the Telin ISO Programme 2026
+    onto the Harmonized Structure (HS, formerly Annex SL Appendix 2). It captures HS revision adopted,
+    standard-specific subclause extensions, and key deviation notes per standard. Use as a brainstorming aid;
+    final clause-by-clause crosswalk validation is the responsibility of an accredited certification body
+    (Intertek, BSI, DNV, TUEV, SGS, BV).`
+  );
+  const disc = d('disc-box',
+    strong('Disclaimer. '),
+    `MOCK-UP — Brainstorming simulation. No data from Telin is used. ISO Crosswalk content may vary across iterations.
+    Title-and-structure level reconstructed from secondary authoritative summaries (BSI, DNV, DQS, NQA, SGS, ANSI,
+    Advisera, PECB, Amtivo). Not a substitute for the normative text of the ISO standards (copyrighted; available
+    via ISO Store / ANSI / BSI Knowledge).`
+  );
+
+  const stdRows = Object.entries(STD_META).map(([id, m]) => tr(
+    el('td', { style: `padding:5px 10px;font-family:var(--mono);font-size:9px;font-weight:700;color:${m.color}` }, m.abbr),
+    el('td', { style: 'padding:5px 10px;font-size:9.5px;font-weight:700;color:var(--navy)' }, m.code),
+    el('td', { style: 'padding:5px 10px;font-size:9px;color:var(--gray-600)' }, m.short),
+  ));
+  const stdTbl = t('std-summary-tbl',
+    el('thead', null, tr(
+      th('', 'Family'), th('', 'Standard'), th('', 'Short code')
+    )),
+    el('tbody', null, ...stdRows)
+  );
+
+  page(band, kpis, scope, disc, secHd('Standards in scope', '7 ISO/IEC management system standards'), stdTbl);
+}
+
+/* ══════════════════════════════════════════════════════════
+   PAGES 2-3 — HLS CROSSWALK TABLE (split into two groups)
+══════════════════════════════════════════════════════════ */
+function buildHLSPage(stdPairs, groupLabel) {
+  const ids   = stdPairs.map(([k]) => k);
+  const metas = stdPairs.map(([, m]) => m);
+
+  const legend = d('legend-strip',
+    el('span', { style: 'font-size:9px;font-weight:700;color:var(--gray-700);margin-right:4px' }, 'Coverage:'),
+    ...[
+      { bg: '#DCFCE7', br: '#86EFAC', label: 'Full' },
+      { bg: '#EFF6FF', br: '#93C5FD', label: 'Extended' },
+      { bg: '#FEF3C7', br: '#FCD34D', label: 'Partial' },
+    ].map(l => d('legend-item',
+      el('span', { cls: 'legend-sw', style: `background:${l.bg};border-color:${l.br}` }),
+      el('span', null, l.label)
+    ))
+  );
+
+  const tbl = t('hls-tbl',
+    el('thead', null, tr(
+      th('', 'Clause'),
+      ...metas.map(m => el('th', { style: 'color:#fff' },
+        el('div', { style: 'font-weight:800;font-size:9.5px;margin-bottom:1px' }, m.abbr),
+        el('div', { style: 'font-size:8px;opacity:.65;font-weight:400' }, m.code.replace('ISO/IEC ', '').replace('ISO ', ''))
+      ))
+    )),
+    el('tbody', null,
+      ...HLS_CLAUSES.flatMap(section => [
+        tr(
+          el('td', { colspan: ids.length + 1, cls: '' },
+            el('div', { style: 'background:var(--gray-100);padding:5px 8px;font-weight:700;font-size:10px;color:var(--navy);border-left:3px solid var(--red);border-top:1px solid var(--gray-200)' },
+              `§${section.section} — ${section.title}`
+            )
+          )
+        ),
+        ...section.clauses.map(clause => {
+          const cells = ids.map(sid => {
+            const m = clause.mapping[sid];
+            if (!m || m.coverage === 'na') {
+              return el('td', { style: 'padding:5px 7px;vertical-align:top;background:#FAFAFA;text-align:center' },
+                s('cov-dash', '—')
+              );
+            }
+            const cov = COV[m.coverage] || COV.na;
+            const bgs = { full: '#F0FDF4', extended: '#EFF6FF', partial: '#FFFBEB' };
+            return el('td', { style: `padding:5px 7px;vertical-align:top;border-bottom:1px solid var(--gray-100);background:${bgs[m.coverage] || '#fff'}` },
+              s(`cov-badge ${cov.cls}`, cov.label),
+              m.ref  ? el('span', { cls: 'cov-ref-txt' }, m.ref) : null,
+              m.note ? el('span', { cls: 'cov-note-txt' }, m.note) : null
+            );
+          });
+          return tr(
+            el('td', { style: 'padding:5px 7px;vertical-align:top;background:#FAFAFA;border-bottom:1px solid var(--gray-100)' },
+              d('c-ref', clause.ref),
+              d('c-title', clause.title)
+            ),
+            ...cells
+          );
+        })
+      ])
+    )
+  );
+
+  page(secHd('HLS Crosswalk — ' + groupLabel, 'All 56 clauses §4–10 · coverage per standard'), legend, tbl);
+}
+
+/* ══════════════════════════════════════════════════════════
+   PAGES — ANNEX A CONTROLS (93 controls, 4 themes)
+══════════════════════════════════════════════════════════ */
+function buildAnnexPage() {
+  const sections = ANNEX_CONTROL_CROSSWALK.map(cat => {
+    const rows = cat.controls.map(ctrl => {
+      const stdsDisplay = ctrl.applicableStandards
+        .map(sid => STD_META[sid] ? STD_META[sid].abbr : sid).join(', ');
+      return tr(
+        td('', ctrl.id),
+        td('', ctrl.title),
+        el('td', { style: 'color:var(--gray-600);font-size:8px;width:100px' }, stdsDisplay),
+        el('td', { style: 'color:var(--gray-500);font-size:7.5px;line-height:1.35' }, ctrl.note || '')
+      );
+    });
+    return d('annex-section',
+      d('annex-cat-hd',
+        el('span', { style: 'min-width:34px;font-family:var(--mono);color:var(--red);font-size:8.5px' }, cat.category),
+        el('span', null, cat.title),
+        el('span', { style: 'margin-left:auto;font-family:var(--mono);font-size:8.5px;color:var(--gray-500)' }, `${cat.count} controls`)
+      ),
+      t('annex-tbl',
+        el('thead', null, tr(
+          el('th', { style: 'background:var(--gray-50);border-bottom:1px solid var(--gray-200);padding:4px 7px;font-size:8px;color:var(--gray-600);width:44px' }, 'ID'),
+          el('th', { style: 'background:var(--gray-50);border-bottom:1px solid var(--gray-200);padding:4px 7px;font-size:8px;color:var(--gray-600);width:130px' }, 'Control'),
+          el('th', { style: 'background:var(--gray-50);border-bottom:1px solid var(--gray-200);padding:4px 7px;font-size:8px;color:var(--gray-600);width:100px' }, 'Applicable'),
+          el('th', { style: 'background:var(--gray-50);border-bottom:1px solid var(--gray-200);padding:4px 7px;font-size:8px;color:var(--gray-600)' }, 'Note'),
+        )),
+        el('tbody', null, ...rows)
+      )
+    );
+  });
+  page(secHd('Annex A Controls', 'ISO/IEC 27001:2022 — 93 controls · 4 themes'), ...sections);
+}
+
+/* ══════════════════════════════════════════════════════════
+   PAGE — ISO 37001 DELTA (2016 → 2025)
+══════════════════════════════════════════════════════════ */
+function buildDeltaPage() {
+  const dlt = ISO37001_DELTA;
+
+  const kpis = d('delta-kpi-row',
+    ...[
+      { lbl: 'New Clauses',  val: dlt.summary.newClauses,      color: '#15803D' },
+      { lbl: 'Modified',     val: dlt.summary.modifiedClauses, color: '#92400E' },
+      { lbl: 'Moved',        val: dlt.summary.movedClauses,    color: '#1D4ED8' },
+      { lbl: 'Enhanced',     val: dlt.summary.enhanced,        color: '#7C3AED' },
+      { lbl: 'Renamed',      val: dlt.summary.renamed,         color: '#6B7280' },
+      { lbl: 'Total changes',val: dlt.summary.total,           color: 'var(--navy)' },
+    ].map(k => d('delta-kpi',
+      el('div', { cls: 'delta-kpi-val', style: `color:${k.color}` }, String(k.val)),
+      d('delta-kpi-lbl', k.lbl)
+    ))
+  );
+
+  const ctx = d('delta-ctx', strong('Telin context. '), dlt.strategy.telinContext);
+
+  const acts = d('key-actions-box',
+    d('key-actions-lbl', 'Key Actions for Certification'),
+    el('ul', { cls: 'key-actions-list' },
+      ...dlt.strategy.keyActions.map(a => el('li', null, a))
+    )
+  );
+
+  const rows = dlt.items.map(item => {
+    const ds = DSTYLE[item.type] || DSTYLE.modified;
+    const impCls = item.impact === 'High' ? 'imp-H' : item.impact === 'Medium' ? 'imp-M' : 'imp-L';
+    return tr(
+      td('delta-mono', item.clause2025),
+      td('delta-old', item.clause2016 || '—'),
+      el('td', null,
+        el('span', { cls: 'delta-badge', style: `background:${ds.bg};color:${ds.color}` }, ds.label)
+      ),
+      el('td', null,
+        d('delta-ttl', item.title),
+        d('delta-sum', item.summary),
+        d('delta-act', el('span', null, '→'), item.action)
+      ),
+      el('td', null, el('span', { cls: impCls }, item.impact))
+    );
+  });
+
+  const tbl = t('delta-tbl',
+    el('thead', null, tr(
+      th('', '2025'), th('', '2016'), th('', 'Change'),
+      th('', 'Title / Summary / Action'),
+      el('th', { style: 'width:50px' }, 'Impact')
+    )),
+    el('tbody', null, ...rows)
+  );
+
+  page(
+    secHd('ISO 37001 Delta — 2016 → 2025', 'Transition roadmap & clause-level changes'),
+    kpis, ctx, acts, tbl
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   PAGE — HS SKELETON
+══════════════════════════════════════════════════════════ */
+function buildHSSkeleton(data) {
+  function renderSub(sc, depth) {
+    return d(depth > 0 ? 'sk-children' : '',
+      d('sk-row',
+        s('sk-ref', sc.id),
+        el('div', null,
+          s('sk-txt', sc.title),
+          sc.notes ? d('sk-note', '⚠ ' + sc.notes) : null
+        )
+      ),
+      ...(sc.children || []).map(c => renderSub(c, depth + 1))
+    );
+  }
+
+  const groups = data.harmonized_structure.clauses
+    .filter(c => c.subclauses)
+    .map(c => d('sk-clause-grp',
+      d('sk-clause-hd', `§${c.id}  ${c.title}`),
+      ...c.subclauses.map(sc => renderSub(sc, 0))
+    ));
+
+  page(
+    secHd('Harmonized Structure skeleton', data.harmonized_structure.version_in_use_for_skeleton),
+    d('', ...groups)
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   PAGE — HS MAPPING (per-standard cards)
+══════════════════════════════════════════════════════════ */
+function buildHSMapping(data) {
+  const warn = d('mockup-warn',
+    strong('Mock-up. '),
+    'Title-and-structure level only — reconstructed from secondary sources (BSI / DNV / DQS / NQA / SGS / ANSI / Advisera / PECB / Amtivo). Final crosswalk validation: accredited certification body.'
+  );
+
+  const cards = data.standards.map(std => {
+    const devBox = std.deviation_notes
+      ? d('dev-box', strong('Deviation: '), std.deviation_notes)
+      : null;
+
+    const extRows = (std.extensions_beyond_hs || []).map(ext =>
+      d('ext-row',
+        s('ext-ref', '§' + ext.ref),
+        el('div', { cls: 'ext-body' },
+          el('span', null, ext.title),
+          ext.notes ? d('ext-note-sm', '⚠ ' + ext.notes) : null
+        )
+      )
+    );
+    const extSec = extRows.length ? el('div', { style: 'margin-top:8px' },
+      d('ext-lbl', 'Extensions beyond HS'),
+      ...extRows
+    ) : null;
+
+    const annexSec = (std.annex_controls && std.annex_controls.themes)
+      ? el('div', { style: 'margin-top:10px;padding:7px 10px;background:#F1F5F9;border-radius:6px' },
+          el('div', { style: 'font-size:9px;font-weight:700;color:var(--navy);margin-bottom:5px' },
+            std.annex_controls.title + ' — ' + std.annex_controls.total_controls + ' controls'
+          ),
+          d('annex-chip-row',
+            ...std.annex_controls.themes.map(t =>
+              s('annex-chip', `${t.id} · ${t.title} (${t.count})`)
+            )
+          )
+        )
+      : null;
+
+    return d('std-card',
+      d('std-card-hd',
+        d('std-code-lg', std.code),
+        d('std-name-sm', std.name),
+        d('std-hs-tag',  std.hs_revision_followed),
+        std.publication_date ? d('std-pub', 'Published: ' + std.publication_date) : null,
+        (std.transition && std.transition.deadline_for_certified_organizations)
+          ? d('std-deadline', 'Transition deadline: ' + std.transition.deadline_for_certified_organizations)
+          : null
+      ),
+      d('std-card-bd', devBox, extSec, annexSec)
+    );
+  });
+
+  page(secHd('HS Mapping — Standards in Scope', `v${data.metadata.version}  ·  ${data.metadata.generated}`),
+    warn, ...cards
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   PAGE — SANKEY (HS Evolution)
+══════════════════════════════════════════════════════════ */
+function buildSankeyPage() {
+  const chartEl = el('div', { id: 'sankey-chart', style: 'width:100%;height:580px' });
+
+  const legend = d('legend-strip',
+    ...[
+      { color: '#2563EB', label: 'HS spine · 2022 HS' },
+      { color: '#64748B', label: 'HS spine · 2012 HLS' },
+      { color: '#9333EA', label: 'Standard-specific extension' },
+    ].map(l => d('legend-item',
+      el('span', { cls: 'legend-sw', style: `background:${l.color};opacity:.6;border-color:transparent` }),
+      el('span', null, l.label)
+    ))
+  );
+
+  const callouts = d('callout-grid',
+    ...[
+      { val: '2',         lbl: 'on 2022 HS',             note: 'Modern spine — easiest to integrate first', bg: '#EFF6FF', br: '#BFDBFE', color: '#2563EB' },
+      { val: '5',         lbl: 'on 2012 HLS',            note: 'Awaiting Annex SL revision; expect 6.3 + 10.x changes', bg: '#F8FAFC', br: '#CBD5E1', color: '#475569' },
+      { val: '1',         lbl: 'Extension (PIMS)',        note: '27701 inherits 27001\'s HS revision; not standalone', bg: '#FAF5FF', br: '#E9D5FF', color: '#9333EA' },
+      { val: '2027-02-28',lbl: 'ABMS transition deadline',note: 'ISO 37001:2016 → 2025 (2022 HS). DNV / ANSI confirmed.', bg: '#FEF2F2', br: '#FECACA', color: '#DC2626' },
+    ].map(c => d('callout-card',
+      el('div', { style: `font-size:18px;font-weight:800;color:${c.color};line-height:1` }, c.val),
+      el('div', { style: `font-size:9px;font-weight:700;color:${c.color};margin-top:2px` }, c.lbl),
+      el('div', { style: 'font-size:8px;color:var(--gray-600);margin-top:3px;line-height:1.35' }, c.note),
+      el('div', { style: `background:${c.bg};border-color:${c.br};position:absolute;inset:0;border-radius:8px;z-index:-1` })
+    ).map((node, i, arr) => { arr[i].style.background = [c.bg]; arr[i].style.borderColor = c.br; return arr[i]; })[0])
+  );
+
+  // rebuild callouts without nested issue
+  const callouts2 = d('callout-grid');
+  [
+    { val: '2',         lbl: 'on 2022 HS',             note: 'Modern spine — easiest to integrate first', bg: '#EFF6FF', br: '#BFDBFE', color: '#2563EB' },
+    { val: '5',         lbl: 'on 2012 HLS',            note: 'Awaiting Annex SL revision; expect 6.3 + 10.x changes', bg: '#F8FAFC', br: '#CBD5E1', color: '#475569' },
+    { val: '1',         lbl: 'Extension (PIMS)',        note: '27701 inherits 27001\'s HS revision; not standalone', bg: '#FAF5FF', br: '#E9D5FF', color: '#9333EA' },
+    { val: '2027-02-28',lbl: 'ABMS transition deadline',note: 'ISO 37001:2016 → 2025 (2022 HS). DNV / ANSI confirmed.', bg: '#FEF2F2', br: '#FECACA', color: '#DC2626' },
+  ].forEach(c => {
+    const card = el('div', { style: `padding:10px 12px;border-radius:8px;border:1px solid ${c.br};background:${c.bg}` },
+      el('div', { style: `font-size:18px;font-weight:800;color:${c.color};line-height:1` }, c.val),
+      el('div', { style: `font-size:9px;font-weight:700;color:${c.color};margin-top:2px` }, c.lbl),
+      el('div', { style: 'font-size:8px;color:var(--gray-600);margin-top:3px;line-height:1.35' }, c.note)
+    );
+    callouts2.appendChild(card);
+  });
+
+  const burden = d('annex-burden',
+    strong('Annex burden (excluded from Sankey weights): '),
+    'ISO/IEC 27001:2022 — 93 controls / 4 themes · ',
+    'ISO/IEC 27701:2019 — privacy controls layered on 27002 (Annex F mapping) · ',
+    'ISO/IEC 20000-1:2018 — no normative annex; clause 8 carries the load (8.2–8.7) · ',
+    'ISO 37001 — control measures embedded in clause 8 · ',
+    'Others — no normative annex.'
+  );
+
+  const numWarn = d('num-collision',
+    '⚠ ', strong('Number-collision watch: '),
+    'ISO 50001\'s §6.3 ', em('Energy review'), ' ≠ HS 2022\'s §6.3 ', em('Planning of changes'),
+    '. Same number, different intent. Always join on (standard_id, clause_id, semantic_tag), never clause number alone.'
+  );
+
+  page(
+    secHd('HS Evolution — Sankey', '3-layer flow: Standard → HS Clause → Origin'),
+    el('p', { style: 'font-size:9.5px;color:var(--gray-600);margin-bottom:9px;line-height:1.5' },
+      'Read left-to-right: each standard contributes subclauses to the seven HS clauses (§4–§10), which trace back to either the 2012 HLS spine, the 2022 HS spine, or that standard\'s own extensions. Locked vertical order on the left.'
+    ),
+    legend,
+    chartEl,
+    callouts2,
+    burden,
+    numWarn
+  );
+
+  return chartEl;
+}
+
+/* ══════════════════════════════════════════════════════════
+   PAGE — DEPENDENCY WHEEL
+══════════════════════════════════════════════════════════ */
+function buildDepWheelPage() {
+  const chartEl = el('div', { id: 'dep-wheel-chart', style: 'width:100%;height:560px' });
+
+  page(
+    secHd('Dependency Wheel', '7 standards × 7 HS clauses — shared clause coverage'),
+    el('p', { style: 'font-size:9.5px;color:var(--gray-600);text-align:center;margin-bottom:10px' },
+      'How 7 standards map into shared High-Level Structure (HLS) domains. Arc thickness = number of full/extended coverage mappings.'
+    ),
+    chartEl
+  );
+
+  return chartEl;
+}
+
+/* ══════════════════════════════════════════════════════════
+   PAGE — METHODOLOGY & SOURCES
+══════════════════════════════════════════════════════════ */
+function buildMethodology(data) {
+  const intro = d('method-intro', data.methodology.intro);
+  const steps = el('ol', { cls: 'method-steps' },
+    ...data.methodology.steps.map(st =>
+      el('li', null, strong(st.name + '. '), st.detail)
+    )
+  );
+  const valPath = d('method-val', strong('Validation path: '), data.methodology.validation_path);
+
+  const srcRows = data.sources.map(src =>
+    tr(
+      el('td', null, src.id),
+      el('td', { style: 'color:#2563EB;word-break:break-all' }, src.url),
+      el('td', null, (src.status ? `[${src.status}] ` : '') + (src.claims || []).join('; '))
+    )
+  );
+  const srcTbl = t('sources-tbl',
+    el('thead', null, tr(th('', 'Source'), th('', 'URL'), th('', 'Claims / Use'))),
+    el('tbody', null, ...srcRows)
+  );
+
+  const caveats = el('ul', { cls: 'caveat-list' },
+    ...data.caveats.map(c => el('li', null, c))
+  );
+
+  page(
+    secHd('Methodology', `${data.methodology.steps.length} steps · ${data.sources.length} sources`),
+    intro, steps, valPath,
+    secHd('Sources', ''),
+    srcTbl,
+    secHd('Caveats', ''),
+    caveats
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   CHART RENDERERS
+══════════════════════════════════════════════════════════ */
+function renderSankey(el) {
+  if (!window.Highcharts || !window.ISO_DATA) return;
+  const data = window.ISO_DATA.hlsMapping;
+
+  const LEFT = [
+    { family: 'ISMS',  stdId: 'iso27001',     code: 'ISO/IEC 27001:2022',   hsBucket: '2022 HS' },
+    { family: 'PIMS',  stdId: 'iso27701',     code: 'ISO/IEC 27701:2019',   hsBucket: 'Extension' },
+    { family: 'ITSMS', stdId: 'iso20000_1',   code: 'ISO/IEC 20000-1:2018', hsBucket: '2012 HLS' },
+    { family: 'BCMS',  stdId: 'iso22301',     code: 'ISO 22301:2019',        hsBucket: '2012 HLS' },
+    { family: 'OHSMS', stdId: 'iso45001',     code: 'ISO 45001:2018',        hsBucket: '2012 HLS' },
+    { family: 'ABMS',  stdId: 'iso37001_2025',code: 'ISO 37001:2025',        hsBucket: '2022 HS' },
+    { family: 'EnMS',  stdId: 'iso50001',     code: 'ISO 50001:2018',        hsBucket: '2012 HLS' },
+  ];
+  const HS_C = [
+    {id:'4',t:'Context'},{id:'5',t:'Leadership'},{id:'6',t:'Planning'},
+    {id:'7',t:'Support'},{id:'8',t:'Operation'},{id:'9',t:'Performance'},{id:'10',t:'Improvement'},
+  ];
+  const ORIG = [
+    {id:'spine_2022',lbl:'HS spine · 2022 HS',color:'#2563EB'},
+    {id:'spine_2012',lbl:'HS spine · 2012 HLS',color:'#64748B'},
+    {id:'extension', lbl:'Standard-specific extension',color:'#9333EA'},
+  ];
+  const FC = {ISMS:'#2563EB',PIMS:'#9333EA',ITSMS:'#0891B2',BCMS:'#059669',OHSMS:'#EA580C',ABMS:'#DC2626',EnMS:'#CA8A04'};
+  const SP12 = {4:4,5:3,6:2,7:5,8:1,9:3,10:2};
+  const SP22 = {4:4,5:3,6:3,7:5,8:1,9:3,10:2};
+
+  const stdNodes  = LEFT.map((s,i) => ({id:`S${i}|${s.family} · ${s.code}`,column:0,color:FC[s.family],offset:i*40}));
+  const cNodes    = HS_C.map((c,i) => ({id:`C${i}|§${c.id} ${c.t}`,column:1,color:'#1E293B',offset:i*40}));
+  const origNodes = ORIG.map((o,i) => ({id:`O${i}|${o.lbl}`,column:2,color:o.color,offset:i*40}));
+
+  const links = [];
+  LEFT.forEach((s,si) => {
+    const sNode = stdNodes[si].id;
+    const std   = data.standards.find(x => x.id === s.stdId);
+    if (!std) return;
+    const newHS = s.hsBucket !== '2012 HLS';
+    const spine = newHS ? SP22 : SP12;
+    const extMap = {};
+    (std.extensions_beyond_hs || []).forEach(ext => {
+      const top = String(ext.ref).split('.')[0];
+      if (SP22[top] !== undefined) extMap[top] = (extMap[top] || 0) + 1;
+    });
+    HS_C.forEach((c,ci) => {
+      const sc = spine[c.id] || 0, ec = extMap[c.id] || 0, tot = sc + ec;
+      if (!tot) return;
+      links.push({from:sNode,to:cNodes[ci].id,weight:tot});
+      if (sc) links.push({from:cNodes[ci].id,to:newHS?origNodes[0].id:origNodes[1].id,weight:sc});
+      if (ec) links.push({from:cNodes[ci].id,to:origNodes[2].id,weight:ec});
+    });
+  });
+
+  const strip = id => (id||'').split('|').slice(1).join('|')||id;
+  try {
+    Highcharts.chart(el, {
+      chart:{type:'sankey',height:560,backgroundColor:'transparent',style:{fontFamily:'Plus Jakarta Sans, sans-serif'}},
+      title:{text:null},credits:{enabled:false},accessibility:{enabled:false},
+      plotOptions:{sankey:{nodePadding:10,nodeWidth:16,curveFactor:.5,linkOpacity:.42,
+        dataLabels:{enabled:true,style:{fontSize:'10px',fontWeight:'600',textOutline:'none',color:'#1E293B'},
+          formatter(){if(!this.point.isNode)return null;return strip(this.point.name);},
+          nodeFormatter(){return strip(this.name);}
+        }
+      }},
+      series:[{keys:['from','to','weight'],data:links,nodes:[...stdNodes,...cNodes,...origNodes],name:'HS evolution'}]
+    });
+  } catch(e) { el.innerHTML = `<div style="color:red;padding:20px">Highcharts error: ${e.message}</div>`; }
+}
+
+function renderDepWheel(el) {
+  if (!window.Highcharts) return;
+  const ids = Object.keys(STD_META);
+  const linksMap = {};
+  HLS_CLAUSES.forEach(sec => {
+    const target = `§${sec.section} ${sec.title.split(' ')[0]}`;
+    sec.clauses.forEach(clause => {
+      ids.forEach(sid => {
+        const cov = clause.mapping[sid]?.coverage;
+        if (cov === 'full' || cov === 'extended') {
+          const k = `${STD_META[sid].abbr}|${target}`;
+          linksMap[k] = (linksMap[k] || 0) + 1;
+        }
+      });
+    });
+  });
+  const ordered = [
+    '§4 Context','§5 Leadership','§6 Planning','§7 Support','§8 Operation','§9 Performance','§10 Improvement',
+    ...ids.map(sid => STD_META[sid].abbr)
+  ];
+  const wData = [];
+  for (let i = 0; i < ordered.length; i++)
+    wData.push([ordered[i], ordered[i === ordered.length-1 ? 0 : i+1], 1e-9]);
+  Object.keys(linksMap).forEach(k => {
+    const [f,t2] = k.split('|');
+    wData.push([f,t2,linksMap[k]]);
+  });
+  try {
+    Highcharts.chart(el, {
+      chart:{style:{fontFamily:'Plus Jakarta Sans, sans-serif'},backgroundColor:'transparent'},
+      title:{text:null},credits:{enabled:false},
+      series:[{
+        keys:['from','to','weight'],data:wData,type:'dependencywheel',name:'Dependency Flow',size:'92%',
+        dataLabels:{color:'var(--gray-900)',textPath:{enabled:true,attributes:{dy:5}},distance:10,
+          style:{fontWeight:'700',fontSize:'11px',textOutline:'none'}},
+        nodes:ordered.map(id=>({
+          id,
+          color:id.startsWith('§')?'#6B7280':STD_META[ids.find(s=>STD_META[s].abbr===id)]?.color||'#999'
+        }))
+      }]
+    });
+  } catch(e) { el.innerHTML = `<div style="color:red;padding:20px">Highcharts error: ${e.message}</div>`; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof STD_META === 'undefined') {
+    shell.innerHTML = '<div style="padding:40px;color:#dc2626;font-family:sans-serif;font-size:14px">Error: data/crosswalk.js and data/iso.js not loaded. Open this file from the same web server as the main app.</div>';
+    return;
+  }
+
+  const stdsArr = Object.entries(STD_META);
+  const hlsData = window.ISO_DATA && window.ISO_DATA.hlsMapping;
+
+  buildCover();
+  buildHLSPage(stdsArr.slice(0,4), 'ISMS · PIMS · ITSMS · BCMS');
+  buildHLSPage(stdsArr.slice(4),   'OHSMS · ABMS · EnMS');
+  buildAnnexPage();
+  buildDeltaPage();
+  if (hlsData) {
+    buildHSSkeleton(hlsData);
+    buildHSMapping(hlsData);
+  }
+  const sankeyEl   = buildSankeyPage();
+  const depWheelEl = buildDepWheelPage();
+  if (hlsData) buildMethodology(hlsData);
+
+  setTimeout(() => {
+    renderSankey(sankeyEl);
+    renderDepWheel(depWheelEl);
+  }, 400);
+});
+</script>
+</body>
+</html>
