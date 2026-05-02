@@ -709,19 +709,19 @@ function HSEvolutionSankey() {
       id: `S${i}|${s.family} · ${s.code}`,
       column: 0,
       color: FAMILY_COLORS[s.family],
-      offset: i * 40,
+      offset: i * 22,
     }));
     const clauseNodes = HS_CLAUSES_ORDER.map((c, i) => ({
       id: `C${i}|§${c.id} ${c.title}`,
       column: 1,
       color: '#1E293B',
-      offset: i * 40,
+      offset: i * 22,
     }));
     const originNodes = ORIGIN_BUCKETS_ORDER.map((o, i) => ({
       id: `O${i}|${o.label}`,
       column: 2,
       color: o.color,
-      offset: i * 40,
+      offset: i * 22,
     }));
 
     // Build flows
@@ -769,7 +769,7 @@ function HSEvolutionSankey() {
       : links;
 
     // Responsive height: fill viewport minus header/legend/chips/callouts/footer
-    const getSankeyHeight = () => Math.max(720, (window.innerHeight || 900) - 320);
+    const getSankeyHeight = () => Math.max(680, (window.innerHeight || 900) - 220);
 
     chartRef.current.innerHTML = '';
     let chart = null;
@@ -829,8 +829,8 @@ function HSEvolutionSankey() {
         },
         plotOptions: {
           sankey: {
-            nodePadding: 14,
-            nodeWidth: 18,
+            nodePadding: 8,
+            nodeWidth: 14,
             curveFactor: 0.5,
             linkOpacity: 0.45,
             states: { hover: { linkOpacity: 0.85 } },
@@ -918,7 +918,7 @@ function HSEvolutionSankey() {
       </div>
 
       {/* Chart */}
-      <div ref={chartRef} style={{ minHeight: Math.max(720, (typeof window !== 'undefined' ? (window.innerHeight - 320) : 720)), width: '100%' }} />
+      <div ref={chartRef} style={{ minHeight: Math.max(680, (typeof window !== 'undefined' ? (window.innerHeight - 220) : 680)), width: '100%' }} />
 
       {/* Auto callouts */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginTop: 18 }}>
