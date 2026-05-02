@@ -209,9 +209,25 @@ function Sidebar({ active, onNav, showHidden, onToggleHidden }) {
               <div style={{ marginTop: 1 }}>Orchestrator Mode Active</div>
             </div>
           ) : (
-            <div style={{ color: 'rgba(255,255,255,.15)', fontSize: 11 }}>
-              System Integrity Verified
-            </div>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); if (window.AppCmdK) window.AppCmdK.open(); }}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '6px 10px', background: 'rgba(255,255,255,.04)',
+                border: '1px solid rgba(255,255,255,.08)', borderRadius: 6,
+                color: 'rgba(255,255,255,.55)', fontSize: 11, fontFamily: 'inherit', cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,.08)'; e.currentTarget.style.color = 'rgba(255,255,255,.9)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,.04)'; e.currentTarget.style.color = 'rgba(255,255,255,.55)'; }}
+            >
+              <span>Search</span>
+              <kbd style={{
+                fontFamily: 'var(--mono)', fontSize: 10, padding: '2px 5px',
+                background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.12)',
+                borderRadius: 3, color: 'rgba(255,255,255,.85)'
+              }}>⌘K</kbd>
+            </button>
           )}
         </div>
       </div>
