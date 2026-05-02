@@ -220,7 +220,15 @@
     });
     $list.innerHTML = html;
     $list.querySelectorAll('.app-cmdk-item').forEach(function (el) {
-      el.addEventListener('mouseenter', function () { cursor = +el.dataset.i; render(); });
+      el.addEventListener('mouseenter', function () {
+        cursor = +el.dataset.i;
+        // Swap active class without re-rendering — a full render() rebuilds innerHTML
+        // which destroys the element mid-click and the browser cancels the click event.
+        var prev = $list.querySelector('.app-cmdk-item.is-active');
+        if (prev && prev !== el) prev.classList.remove('is-active');
+        el.classList.add('is-active');
+      });
+      el.addEventListener('mousedown', function (e) { if (e.button === 0) e.preventDefault(); });
       el.addEventListener('click', function () { cursor = +el.dataset.i; commit(); });
     });
     var active = $list.querySelector('.is-active');
