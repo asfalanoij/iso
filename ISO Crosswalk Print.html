@@ -69,6 +69,8 @@ body {
   position: relative;
   min-height: 267mm; /* 297mm - 14mm top - 16mm bottom */
   border-bottom: 1px dashed #ddd;
+  display: flex;
+  flex-direction: column;
 }
 .doc-page:last-child { border-bottom: none; page-break-after: auto; }
 
@@ -324,12 +326,11 @@ body {
   html { font-size: 10px; }
   .print-bar, .fab-dl { display: none !important; }
   .shell { max-width: 210mm; margin: 0 auto; box-shadow: none; }
-  /* doc-page padding is unchanged — same 14mm 15mm as screen */
-  .doc-page { min-height: 0; border-bottom: none; }
-  .doc-page:last-child { page-break-after: auto; }
-  /* footer: flow normally so it doesn't escape the content box */
-  .pg-footer { position: static; margin-top: 8mm; }
-  .std-card, .annex-section, .delta-tbl tr { page-break-inside: avoid; }
+  .doc-page { min-height: 0; height: 297mm; border-bottom: none; }
+  .doc-page:last-child { page-break-after: auto; height: auto; min-height: 297mm; }
+  /* footer: flex pushes it to bottom; static removes absolute positioning */
+  .pg-footer { position: static; margin-top: auto; left: auto; right: auto; bottom: auto; }
+  .std-card, .annex-section, .delta-tbl tr, .hls-clause { page-break-inside: avoid; }
 }
 @media screen {
   body { background: #d6d6d6; }
@@ -388,8 +389,7 @@ function page(...content) {
   pageNum++;
   const pg = d('doc-page', ...content,
     d('pg-footer',
-      el('span', null, 'ISO Crosswalk 2026 · Telin ISO Programme'),
-      el('span', null, `ISO 2026 readiness · rudy.prasetiya@telin.net · April 2026`)
+      el('span', null, 'ISO Crosswalk 2026 | prototype, IA division, 2026')
     )
   );
   shell.appendChild(pg);
