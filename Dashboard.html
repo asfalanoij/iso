@@ -167,7 +167,7 @@ function Sidebar({ active, onNav, showHidden, onToggleHidden }) {
           </div>
         </div>
       </div>
-      <nav style={{ padding: '12px 12px', flex: 1 }}>
+      <nav style={{ padding: '12px 12px', flex: 1, overflowY: 'auto' }}>
         {NAV_ITEMS.filter(item => !item.hidden || showHidden).map(item => (
           <button key={item.id} onClick={() => onNav(item.id)} style={{
             width: '100%', display: 'flex', alignItems: 'center', gap: 10,
@@ -181,9 +181,7 @@ function Sidebar({ active, onNav, showHidden, onToggleHidden }) {
             {item.label}
           </button>
         ))}
-      </nav>
-      <div style={{ padding: '12px 12px', borderTop: '1px solid rgba(255,255,255,.08)' }}>
-        <div style={{ fontSize: 10, color: 'rgba(255,255,255,.3)', fontWeight: 700, letterSpacing: .5, textTransform: 'uppercase', marginBottom: 6, paddingLeft: 10 }}>Tools</div>
+        <div style={{ height: 1, background: 'rgba(255,255,255,.08)', margin: '8px 10px' }} />
         {NAV_LINKS.map(link => (
           <a key={link.href} href={link.href} style={{
             display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, marginBottom: 2,
@@ -194,17 +192,16 @@ function Sidebar({ active, onNav, showHidden, onToggleHidden }) {
             <span style={{ fontSize: 14 }}>{link.icon}</span>{link.label}
           </a>
         ))}
-        <div 
+      </nav>
+      <div style={{ padding: '12px 12px', borderTop: '1px solid rgba(255,255,255,.08)' }}>
+        <div
           onClick={onToggleHidden}
-          style={{ 
-            marginTop: 10, paddingLeft: 10, borderTop: '1px solid rgba(255,255,255,.06)', 
-            paddingTop: 10, cursor: 'pointer', transition: 'opacity 0.2s'
-          }}
+          style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
           onMouseEnter={e => e.currentTarget.style.opacity = 1}
           onMouseLeave={e => e.currentTarget.style.opacity = 0.5}
         >
           {showHidden ? (
-            <div style={{ color: 'rgba(255,255,255,.4)', fontSize: 11 }}>
+            <div style={{ color: 'rgba(255,255,255,.4)', fontSize: 11, paddingLeft: 10 }}>
               <div style={{ color: 'rgba(255,255,255,.3)' }}>Internal Audit Team</div>
               <div style={{ marginTop: 1 }}>Orchestrator Mode Active</div>
             </div>

@@ -72,8 +72,7 @@
         '</div>' +
       '</div>';
 
-    var navHtml = '<nav class="app-sidebar__nav" aria-label="Tools">';
-    navHtml += '<div class="app-sidebar__section-title">Tools</div>';
+    var navHtml = '<nav class="app-sidebar__nav" aria-label="Navigation">';
     NAV_LINKS.forEach(function (item) {
       var active = item.href === here ? ' aria-current="page"' : '';
       navHtml +=
